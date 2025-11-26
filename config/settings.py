@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'apps.twobeats_music_explore',
     'apps.twobeats_worldcup',
     'apps.twobeats_video_explore',
+
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

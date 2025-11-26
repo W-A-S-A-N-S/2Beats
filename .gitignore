@@ -420,3 +420,6 @@ __marimo__/
 # Django Media & Static (Add)
 /media
 /staticfiles
+
+
+create_dummy_music.py
