@@ -130,7 +130,7 @@ def save_game_result(request):
             )
 
             # 상세 결과 저장
-            score_map = {1: 100, 2: 50, 4: 30, 8: 10, 16: 5}
+            score_map = {1: 50, 2: 30, 4: 10, 8: 5, 16: 0}
             results_to_create = []
 
             for item in data['results']:
