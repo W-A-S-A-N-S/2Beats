@@ -23,19 +23,73 @@
             padding: 20px;
         }
 
-        /* 뒤로가기 버튼 */
-        .back-button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #f0f0f0;
-            color: #333;
-            text-decoration: none;
-            border-radius: 5px;
+        /* 메뉴바 */
+        .menu-bar {
+            background-color: #fff;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 15px 0;
             margin-bottom: 20px;
         }
 
-        .back-button:hover {
-            background-color: #e0e0e0;
+        .menu-tabs {
+            display: flex;
+            gap: 30px;
+            overflow-x: auto;
+        }
+
+        .menu-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .menu-tab:hover {
+            background-color: rgba(0, 205, 60, 0.1);
+            color: #00CD3C;
+        }
+
+        .menu-tab.active {
+            color: #00CD3C;
+            border-bottom-color: #00CD3C;
+            font-weight: bold;
+        }
+
+        /* 검색창 */
+        .search-box {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #00CD3C;
+        }
+
+        .search-box button {
+            padding: 12px 30px;
+            background-color: #00CD3C;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .search-box button:hover {
+            background-color: #00b835;
         }
 
         /* 영상 플레이어 */
@@ -313,8 +367,28 @@
 </head>
 <body>
     <div class="container">
-        <!-- 뒤로가기 버튼 -->
-        <a href="{% url 'video_explore:video_list' %}" class="back-button">← 목록으로</a>
+        <!-- 메뉴바 -->
+        <div class="menu-bar">
+            <div class="menu-tabs">
+                <a href="{% url 'video_explore:video_list' %}" class="menu-tab {% if not video.video_type %}active{% endif %}">전체</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'mv' %}" class="menu-tab {% if video.video_type == 'mv' %}active{% endif %}">뮤직비디오</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'performance' %}" class="menu-tab {% if video.video_type == 'performance' %}active{% endif %}">퍼포먼스</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'live' %}" class="menu-tab {% if video.video_type == 'live' %}active{% endif %}">라이브</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'cover' %}" class="menu-tab {% if video.video_type == 'cover' %}active{% endif %}">커버</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'dance' %}" class="menu-tab {% if video.video_type == 'dance' %}active{% endif %}">댄스 영상</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'documentary' %}" class="menu-tab {% if video.video_type == 'documentary' %}active{% endif %}">다큐멘터리</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'behind' %}" class="menu-tab {% if video.video_type == 'behind' %}active{% endif %}">비하인드</a>
+                <a href="{% url 'video_explore:video_list_by_type' 'etc' %}" class="menu-tab {% if video.video_type == 'etc' %}active{% endif %}">기타</a>
+            </div>
+        </div>
+
+        <!-- 검색창 -->
+        <div class="search-box">
+            <form method="get" action="{% url 'video_explore:video_list' %}" style="display: flex; flex: 1; gap: 10px;">
+                <input type="text" name="q" placeholder="영상 제목이나 아티스트를 검색하세요...">
+                <button type="submit">검색</button>
+            </form>
+        </div>
 
         <!-- 영상 플레이어 -->
         <div class="video-player">
@@ -464,6 +538,41 @@
         }
 
         const csrftoken = getCookie('csrftoken');
+
+        // 재생수 증가 (영상 재생 시)
+        let playCountIncreased = false; // 한 번만 증가하도록 플래그
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoElement = document.querySelector('video');
+
+            if (videoElement) {
+                videoElement.addEventListener('play', function() {
+                    if (!playCountIncreased) {
+                        increasePlayCount({{ video.pk }});
+                        playCountIncreased = true;
+                    }
+                });
+            }
+        });
+
+        function increasePlayCount(videoId) {
+            fetch(`/video/${videoId}/play/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('재생수 증가:', data.play_count);
+                }
+            })
+            .catch(error => {
+                console.error('재생수 증가 오류:', error);
+            });
+        }
 
         // 좋아요 토글
         function toggleLike(videoId) {

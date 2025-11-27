@@ -20,6 +20,9 @@ urlpatterns = [
     # 좋아요 토글 (AJAX)
     path('<int:video_id>/like/', views.toggle_like, name='toggle_like'),
 
+    # 재생수 증가 (AJAX)
+    path('<int:video_id>/play/', views.increase_play_count, name='increase_play_count'),
+
     # 댓글 작성 (AJAX)
     path('<int:video_id>/comment/', views.add_comment, name='add_comment'),
 ]

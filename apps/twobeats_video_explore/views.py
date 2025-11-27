@@ -2,9 +2,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from datetime import datetime, timedelta
 
 from apps.twobeats_upload.models import Video
 from .models import VideoLike, VideoComment
@@ -28,8 +29,16 @@ def video_list(request, video_type=None):
             Q(video_singer__icontains=search_query)
         )
 
-    # 인기 영상 TOP3 (현재 필터된 타입 기준 조회수 상위 3개)
-    top_videos = videos.order_by('-video_views')[:3]
+    # 인기 영상 TOP3 (점수 기반: 조회수*5 + 좋아요*3 + 댓글수*2)
+    top_videos = videos.annotate(
+        like_count=Count('videolike', distinct=True),
+        comment_count=Count('comments', distinct=True)
+    ).annotate(
+        popularity_score=ExpressionWrapper(
+            (F('video_views') * 5) + (F('like_count') * 3) + (F('comment_count') * 2),
+            output_field=IntegerField()
+        )
+    ).order_by('-popularity_score')[:3]
 
     # 일반 영상 리스트 (최신순)
     videos = videos.order_by('-video_created_at')
@@ -64,12 +73,29 @@ def video_detail(request, video_id):
 
     video = get_object_or_404(Video, pk=video_id)
 
-    # 조회수 증가 (세션 기반 중복 방지)
+    # 조회수 증가 (세션 기반 + 24시간 제한)
     session_key = f'video_viewed_{video_id}'
-    if not request.session.get(session_key):
+    last_viewed = request.session.get(session_key)
+
+    should_count = False
+    if not last_viewed:
+        # 처음 방문
+        should_count = True
+    else:
+        # 마지막 조회 시간 확인
+        try:
+            last_viewed_time = datetime.fromisoformat(last_viewed)
+            if datetime.now() - last_viewed_time > timedelta(hours=24):
+                # 24시간이 지났으면 다시 카운트
+                should_count = True
+        except (ValueError, TypeError):
+            # 세션 데이터가 잘못된 경우 다시 카운트
+            should_count = True
+
+    if should_count:
         video.video_views += 1
         video.save(update_fields=['video_views'])
-        request.session[session_key] = True
+        request.session[session_key] = datetime.now().isoformat()
 
     # 현재 사용자의 좋아요 상태 확인
     is_liked = False
@@ -137,6 +163,42 @@ def toggle_like(request, video_id):
         'success': True,
         'liked': liked,
         'like_count': like_count,
+    })
+
+
+@require_POST
+def increase_play_count(request, video_id):
+    """재생수 증가 (영상 재생 시)"""
+
+    video = get_object_or_404(Video, pk=video_id)
+
+    # 재생수 증가 (세션 기반 + 24시간 제한)
+    session_key = f'video_played_{video_id}'
+    last_played = request.session.get(session_key)
+
+    should_count = False
+    if not last_played:
+        # 처음 재생
+        should_count = True
+    else:
+        # 마지막 재생 시간 확인
+        try:
+            last_played_time = datetime.fromisoformat(last_played)
+            if datetime.now() - last_played_time > timedelta(hours=24):
+                # 24시간이 지났으면 다시 카운트
+                should_count = True
+        except (ValueError, TypeError):
+            # 세션 데이터가 잘못된 경우 다시 카운트
+            should_count = True
+
+    if should_count:
+        video.video_play_count += 1
+        video.save(update_fields=['video_play_count'])
+        request.session[session_key] = datetime.now().isoformat()
+
+    return JsonResponse({
+        'success': True,
+        'play_count': video.video_play_count,
     })
 
 
