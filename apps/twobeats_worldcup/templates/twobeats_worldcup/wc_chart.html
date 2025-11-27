@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ chart_title }} - 2Beats</title>
+    <style>
+        /* --- [스타일 정의] --- */
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        /* 차트 리스트 스타일 */
+        .chart-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
+        .chart-item {
+            display: flex;
+            align-items: center;
+            background-color: #1e1e1e;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            transition: transform 0.2s, background-color 0.2s;
+            border: 1px solid #333;
+        }
+
+        .chart-item:hover {
+            transform: translateX(5px);
+            background-color: #2a2a2a;
+            border-color: #555;
+        }
+
+        /* 순위 스타일 */
+        .rank {
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 60px;
+            text-align: center;
+            margin-right: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        
+        /* 1~3위 강조 */
+        .rank-1 { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        .rank-2 { color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; }
+
+        /* 썸네일 */
+        .thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 20px;
+            background-color: #333;
+        }
+
+        /* 곡 정보 */
+        .info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .title:hover { text-decoration: underline; }
+
+        .singer {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* 점수 뱃지 */
+        .score-badge {
+            background-color: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #00ff88;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* 반응형 (모바일) */
+        @media (max-width: 600px) {
+            .chart-item { padding: 10px; }
+            .rank { width: 40px; font-size: 1.2rem; margin-right: 10px; }
+            .thumb { width: 50px; height: 50px; margin-right: 15px; }
+            .title { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>{{ chart_title }}</h1>
+    <p class="subtitle">사용자들의 월드컵 선택을 가장 많이 받은 인기곡입니다.</p>
+
+    <ul class="chart-list">
+        {% for music in musics %}
+        <li class="chart-item">
+            <div class="rank rank-{{ forloop.counter }}">
+                {{ forloop.counter }}
+            </div>
+
+            {% if music.music_thumbnail %}
+                <img src="{{ music.music_thumbnail.url }}" alt="cover" class="thumb">
+            {% else %}
+                <div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#555;">No Img</div>
+            {% endif %}
+
+            <div class="info">
+                <a href="#" class="title">{{ music.music_title }}</a>
+                <span class="singer">{{ music.music_singer }}</span>
+            </div>
+
+            <div class="score-badge">
+                🔥 {{ music.total_score }}점
+            </div>
+        </li>
+        {% empty %}
+        <li style="text-align:center; padding: 40px; color: #666;">
+            아직 랭킹 데이터가 없습니다. 월드컵을 플레이해보세요!
+        </li>
+        {% endfor %}
+    </ul>
+
+</div>
+
+</body>
+</html>

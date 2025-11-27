@@ -188,3 +188,28 @@ def ranking_page(request):
         'genres': Music.GENRE_CHOICES, # 장르 목록 (버튼 생성용)
     }
     return render(request, 'twobeats_worldcup/ranking.html', context)
+
+
+def wc_popular(request):
+    """인기 차트 (월드컵점수기준)"""
+    wc_musics = Music.objects.annotate(
+        total_score=Coalesce(Sum('worldcupresult__wc_score'), 0)
+    ).exclude(
+        total_score=0 #0점은 순위 제외
+    ).order_by(
+        '-total_score',
+        '-music_created_at'
+    )[:50]
+    
+    context = {
+        'musics': wc_musics,
+        'chart_type': 'wc_popular',
+        'chart_title': 'worldcup 상위 차트',
+    }
+    return render(request, 'twobeats_worldcup\wc_chart.html', context)
+
+            # top_candidates = base_musics.filter(music_type=genre).annotate(
+            #     total_score=Coalesce(Sum('worldcupresult__wc_score'), 0)
+            # ).order_by('-total_score')[:count]
+            # candidates = list(top_candidates)
+            # random.shuffle(candidates)
