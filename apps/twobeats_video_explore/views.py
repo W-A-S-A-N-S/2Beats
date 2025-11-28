@@ -6,6 +6,11 @@ from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from datetime import datetime, timedelta
+import mimetypes
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from ranged_response import RangedFileResponse
 
 from apps.twobeats_upload.models import Video
 from .models import VideoLike, VideoComment
@@ -297,3 +302,39 @@ def delete_comment(request, comment_id):
     return JsonResponse({
         'success': True,
     })
+
+
+@api_view(['GET'])
+def stream_video(request, video_id):
+    """
+    영상 파일을 스트리밍합니다.
+
+    Range Request를 지원하여 seek(탐색) 기능이 정상 작동합니다.
+    """
+    # 1. Video 객체 가져오기
+    video = get_object_or_404(Video, pk=video_id)
+
+    # 2. 파일이 실제로 존재하는지 확인
+    if not video.video_root:
+        return Response(
+            {"error": "이 영상에는 비디오 파일이 없습니다."},
+            status=404
+        )
+
+    # 3. 파일 확장자에 따라 MIME type 자동 감지
+    content_type, _ = mimetypes.guess_type(video.video_root.path)
+    if not content_type:
+        content_type = 'video/mp4'  # 기본값
+
+    # 4. Range Request를 지원하는 응답 생성
+    # RangedFileResponse가 자동으로:
+    # - Range 헤더 확인
+    # - 206 Partial Content 응답
+    # - Content-Range 헤더 설정
+    response = RangedFileResponse(
+        request,
+        open(video.video_root.path, 'rb'),
+        content_type=content_type
+    )
+
+    return response

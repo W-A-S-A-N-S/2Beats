@@ -1,5 +1,7 @@
 asgiref==3.11.0
 Django==5.2.8
+django-ranged-response==0.2.0
+djangorestframework==3.16.1
 pillow==12.0.0
 setuptools==80.9.0
 sqlparse==0.5.3

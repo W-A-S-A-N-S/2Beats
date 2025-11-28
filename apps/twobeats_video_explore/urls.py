@@ -17,6 +17,9 @@ urlpatterns = [
     # 영상 상세
     path('<int:video_id>/', views.video_detail, name='video_detail'),
 
+    # 영상 스트리밍 (DRF + Range Request)
+    path('<int:video_id>/stream/', views.stream_video, name='stream_video'),
+
     # 좋아요 토글 (AJAX)
     path('<int:video_id>/like/', views.toggle_like, name='toggle_like'),
 

@@ -492,7 +492,7 @@
         <div class="video-player">
             {% if video.video_root %}
             <video controls>
-                <source src="{{ video.video_root.url }}" type="video/mp4">
+                <source src="{% url 'video_explore:stream_video' video.pk %}" type="video/mp4">
                 브라우저가 비디오를 지원하지 않습니다.
             </video>
             {% else %}
