@@ -1,0 +1,77 @@
+<!-- templates/music_explore/components/music_card.html -->
+
+<div style="
+    padding: 1rem; 
+    border: 1px solid #eee; 
+    border-radius: 8px;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    transition: all 0.3s;
+" onmouseover="this.style.backgroundColor='#f9f9f9'" 
+   onmouseout="this.style.backgroundColor='white'">
+    
+    <!-- 순위 (선택사항) -->
+    {% if show_rank %}
+    <div style="
+        font-size: 2rem; 
+        font-weight: bold; 
+        color: #1db954;
+        min-width: 50px;
+        text-align: center;
+    ">
+        {{ rank }}
+    </div>
+    {% endif %}
+    
+    <!-- 썸네일 -->
+    <div style="min-width: 80px; max-width: 80px;">
+        {% if music.music_thumbnail %}
+            <img src="{{ music.music_thumbnail.url }}" 
+                 alt="{{ music.music_title }}"
+                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+        {% else %}
+            <div style="
+                width: 80px; height: 80px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 8px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 2rem;
+            ">🎵</div>
+        {% endif %}
+    </div>
+    
+    <!-- 정보 -->
+    <div style="flex: 1;">
+        <h3 style="margin-bottom: 0.5rem;">
+            <a href="{% url 'music_explore:detail' music.id %}" 
+               style="color: #333; text-decoration: none;">
+                {{ music.music_title }}
+            </a>
+        </h3>
+        <p style="color: #666; margin-bottom: 0.3rem;">{{ music.music_singer }}</p>
+        <p style="color: #999; font-size: 0.9rem;">
+            {{ music.get_music_type_display }} | 
+            재생 {{ music.music_count }}회 | 
+            좋아요 {{ music.music_like_count }}
+            {% if music.tags.all %}
+                | {% for tag in music.tags.all %}
+                    <span style="color: #1db954;">#{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- 재생 버튼 -->
+    <button 
+        class="btn btn-primary" 
+        data-id="{{ music.id }}"
+        data-title="{{ music.music_title }}"
+        data-singer="{{ music.music_singer }}"
+        data-url="{% if music.music_root %}{{ music.music_root.url }}{% endif %}"
+        data-thumb="{% if music.music_thumbnail %}{{ music.music_thumbnail.url }}{% endif %}"
+        onclick="playMusicFromData(this)"
+    >
+        재생 ▶
+    </button>
+</div>

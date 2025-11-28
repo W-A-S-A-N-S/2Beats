@@ -1,5 +1,3 @@
-<!-- templates/music_explore/chart.html -->
-
 {% extends 'music_explore/base.html' %}
 
 {% block title %}{{ chart_title }} - TwoBeats{% endblock %}
@@ -35,7 +33,7 @@
                         {{ forloop.counter }}
                     </div>
                     
-                    <!-- 썸네일 (추가!) -->
+                    <!-- 썸네일 -->
                     <div style="min-width: 80px; max-width: 80px;">
                         {% if music.music_thumbnail %}
                             <img src="{{ music.music_thumbnail.url }}" 
@@ -76,7 +74,7 @@
                             재생 {{ music.music_count }}회 | 
                             좋아요 {{ music.music_like_count }}
                             
-                            <!-- 태그 표시 (추가!) -->
+                            <!-- 태그 표시 -->
                             {% if music.tags.all %}
                                 | 
                                 {% for tag in music.tags.all %}
@@ -87,9 +85,17 @@
                     </div>
                     
                     <!-- 재생 버튼 -->
-                    <a href="{% url 'music_explore:detail' music.id %}" class="btn btn-primary">
+                    <button 
+                        class="btn btn-primary" 
+                        data-id="{{ music.id }}"
+                        data-title="{{ music.music_title }}"
+                        data-singer="{{ music.music_singer }}"
+                        data-url="{% if music.music_root %}{{ music.music_root.url }}{% endif %}"
+                        data-thumb="{% if music.music_thumbnail %}{{ music.music_thumbnail.url }}{% endif %}"
+                        onclick="playMusicFromData(this)"
+                    >
                         재생 ▶
-                    </a>
+                    </button>
                 </div>
             {% endfor %}
         </div>

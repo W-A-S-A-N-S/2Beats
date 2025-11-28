@@ -38,7 +38,7 @@
                 <option value="etc" {% if genre == 'etc' %}selected{% endif %}>기타</option>
             </select>
             
-            <!-- 태그 필터 (동적!) -->
+            <!-- 태그 필터 -->
             <select name="tag" class="search-box">
                 <option value="">전체 태그</option>
                 {% for t in all_tags %}
@@ -57,12 +57,12 @@
 <div class="card">
     <h2 style="margin-bottom: 1rem;">
         {% if query or genre or tag %}
-            검색 결과 ({{ musics.count }}곡)
+            검색 결과 ({{ musics.paginator.count }}곡)
             {% if query %}<span style="color: #1db954;"> - "{{ query }}"</span>{% endif %}
             {% if genre %}<span style="color: #1db954;"> - 장르: {{ genre }}</span>{% endif %}
             {% if tag %}<span style="color: #1db954;"> - 태그: #{{ tag }}</span>{% endif %}
         {% else %}
-            전체 음악 ({{ musics.count }}곡)
+            전체 음악 ({{ musics.paginator.count }}곡)
         {% endif %}
     </h2>
     
@@ -80,7 +80,7 @@
                 " onmouseover="this.style.backgroundColor='#f9f9f9'" 
                    onmouseout="this.style.backgroundColor='white'">
                     
-                    <!-- 썸네일 (추가!) -->
+                    <!-- 썸네일 -->
                     <div style="min-width: 80px; max-width: 80px;">
                         {% if music.music_thumbnail %}
                             <img src="{{ music.music_thumbnail.url }}" 
@@ -132,12 +132,55 @@
                     </div>
                     
                     <!-- 재생 버튼 -->
-                    <a href="{% url 'music_explore:detail' music.id %}" class="btn btn-primary">
+                    <button 
+                        class="btn btn-primary" 
+                        data-id="{{ music.id }}"
+                        data-title="{{ music.music_title }}"
+                        data-singer="{{ music.music_singer }}"
+                        data-url="{% if music.music_root %}{{ music.music_root.url }}{% endif %}"
+                        data-thumb="{% if music.music_thumbnail %}{{ music.music_thumbnail.url }}{% endif %}"
+                        onclick="playMusicFromData(this)"
+                    >
                         재생 ▶
-                    </a>
+                    </button>
                 </div>
             {% endfor %}
         </div>
+        
+        <!-- 페이지네이션 -->
+        {% if musics.has_other_pages %}
+            <div style="
+                display: flex; 
+                justify-content: center; 
+                gap: 0.5rem; 
+                margin-top: 2rem;
+                flex-wrap: wrap;
+            ">
+                {% if musics.has_previous %}
+                    <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if genre %}&genre={{ genre }}{% endif %}{% if tag %}&tag={{ tag }}{% endif %}" 
+                       class="btn btn-secondary">« 처음</a>
+                    <a href="?page={{ musics.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if genre %}&genre={{ genre }}{% endif %}{% if tag %}&tag={{ tag }}{% endif %}" 
+                       class="btn btn-secondary">‹ 이전</a>
+                {% endif %}
+                
+                <span style="
+                    padding: 0.5rem 1rem; 
+                    background: #1db954; 
+                    color: white; 
+                    border-radius: 4px;
+                ">
+                    {{ musics.number }} / {{ musics.paginator.num_pages }}
+                </span>
+                
+                {% if musics.has_next %}
+                    <a href="?page={{ musics.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if genre %}&genre={{ genre }}{% endif %}{% if tag %}&tag={{ tag }}{% endif %}" 
+                       class="btn btn-secondary">다음 ›</a>
+                    <a href="?page={{ musics.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if genre %}&genre={{ genre }}{% endif %}{% if tag %}&tag={{ tag }}{% endif %}" 
+                       class="btn btn-secondary">마지막 »</a>
+                {% endif %}
+            </div>
+        {% endif %}
+        
     {% else %}
         <p style="text-align: center; color: #999; padding: 2rem;">
             검색 결과가 없습니다.
