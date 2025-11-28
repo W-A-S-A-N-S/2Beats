@@ -92,8 +92,8 @@
             {% endif %}
             
             <!-- 버튼들 -->
-            <div style="display: flex; gap: 1rem;">
-                <!-- 좋아요 버튼 (AJAX) -->
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <!-- 좋아요 버튼 -->
                 {% if user.is_authenticated %}
                     <button 
                         id="like-btn"
@@ -106,6 +106,14 @@
                 {% else %}
                     <a href="/admin/" class="btn btn-secondary">🤍 좋아요 (로그인 필요)</a>
                 {% endif %}
+                
+                <!-- 플레이리스트 추가 버튼 -->
+                <button 
+                    class="btn btn-secondary"
+                    onclick="addToPlaylistFromDetail()"
+                >
+                    📋 플레이리스트에 추가
+                </button>
             </div>
         </div>
     </div>
@@ -221,9 +229,7 @@ function toggleLike(musicId) {
     const likeBtn = document.getElementById('like-btn');
     const likeText = document.getElementById('like-text');
     const likeCount = document.getElementById('like-count');
-    const isLiked = likeBtn.dataset.liked === 'true';
     
-    // 서버에 요청
     fetch(`/music/like/${musicId}/`, {
         method: 'POST',
         headers: {
@@ -233,26 +239,36 @@ function toggleLike(musicId) {
     })
     .then(response => response.json())
     .then(data => {
-        // UI 업데이트
         if (data.is_liked) {
             likeBtn.classList.remove('btn-secondary');
             likeBtn.classList.add('btn-primary');
             likeText.textContent = '❤️ 좋아요 취소';
             likeBtn.dataset.liked = 'true';
+            showToast('좋아요 추가!', 'success');
         } else {
             likeBtn.classList.remove('btn-primary');
             likeBtn.classList.add('btn-secondary');
             likeText.textContent = '🤍 좋아요';
             likeBtn.dataset.liked = 'false';
+            showToast('좋아요 취소', 'info');
         }
         
-        // 좋아요 수 업데이트
         likeCount.textContent = data.like_count;
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('오류가 발생했습니다.');
+        showToast('오류가 발생했습니다.', 'error');
     });
+}
+
+// 플레이리스트 추가 (상세 페이지용)
+function addToPlaylistFromDetail() {
+    {% if not user.is_authenticated %}
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+    {% else %}
+    showToast('플레이리스트 기능 준비중입니다.', 'info');
+    {% endif %}
 }
 </script>
 {% endblock %}

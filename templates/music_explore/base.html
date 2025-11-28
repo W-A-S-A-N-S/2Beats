@@ -424,6 +424,7 @@
             
             <div class="player-actions">
                 <button class="control-btn" id="like-btn-player" onclick="toggleLikePlayer()">🤍</button>
+                <button class="control-btn" onclick="addToPlaylist()" title="플레이리스트에 추가">📋</button>
                 <div class="volume-control">
                     <span>🔊</span>
                     <input type="range" min="0" max="100" value="100" 
@@ -727,11 +728,11 @@
             if (!currentMusicData) return;
             
             {% if not user.is_authenticated %}
-            showToast('로그인이 필요합니다.', 'error');
-            return;
+                showToast('로그인이 필요합니다.', 'error');
+                return;
             {% endif %}
-    
-    const likeBtn = document.getElementById('like-btn-player');
+            
+            const likeBtn = document.getElementById('like-btn-player');
             const musicId = currentMusicData.id;
             
             fetch('/music/like/' + musicId + '/', {
