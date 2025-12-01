@@ -462,7 +462,7 @@
         <ul>
             <li><a href="{% url 'music_explore:search' %}" class="logo">🎵 TwoBeats</a></li>
             <li><a href="{% url 'music_explore:search' %}">음악 검색</a></li>
-            <li><a href="{% url 'music_explore:chart_all' %}">차트</a></li>
+            <li><a href="{% url 'music_explore:chart_all' %}">음악 차트</a></li>
             
             <li style="margin-left: auto;">
                 {% if user.is_authenticated %}
@@ -575,6 +575,11 @@
         
         // 페이지 로드 시 실행
         document.addEventListener('DOMContentLoaded', function() {
+            // 저장된 음악 복원
+            const savedMusic = localStorage.getItem('currentMusic');
+            const savedTime = localStorage.getItem('currentTime');
+            const savedVolume = localStorage.getItem('volume');
+
 
             // 볼륨 아이콘 초기화
             if (savedVolume) {
@@ -595,10 +600,7 @@
                 }
             });
             
-            // 저장된 음악 복원
-            const savedMusic = localStorage.getItem('currentMusic');
-            const savedTime = localStorage.getItem('currentTime');
-            const savedVolume = localStorage.getItem('volume');
+            
             
             if (savedMusic) {
                 const music = JSON.parse(savedMusic);
@@ -1058,7 +1060,7 @@
                 if (btn) btn.textContent = '⏸';
             }
         });
-        
+
         audio.addEventListener('pause', function() {
             if (currentMusicData) {
                 const btn = document.querySelector(`[data-id="${currentMusicData.id}"].chart-play-btn, [data-id="${currentMusicData.id}"].music-play-btn`);
