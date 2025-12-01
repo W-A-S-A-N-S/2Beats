@@ -1,11 +1,10 @@
-<!-- templates/music_explore/base.html -->
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TwoBeats{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,40 +13,70 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #fafafa;
             color: #333;
             padding-bottom: 100px;
+            line-height: 1.6;
         }
         
+        /* 네비게이션 */
         nav {
-            background-color: #1a1a1a;
+            background-color: #fff;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         nav ul {
             list-style: none;
             display: flex;
-            gap: 2rem;
+            gap: 2.5rem;
             align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         nav a {
-            color: #fff;
+            color: #555;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+            padding: 0.5rem 0;
+            position: relative;
         }
         
         nav a:hover {
             color: #1db954;
         }
         
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #1db954;
+            transition: width 0.3s;
+        }
+        
+        nav a:hover::after {
+            width: 100%;
+        }
+        
         .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.4rem;
+            font-weight: 700;
             color: #1db954 !important;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo::after {
+            display: none;
         }
         
         .container {
@@ -56,54 +85,69 @@
             padding: 0 2rem;
         }
         
+        /* 카드 */
         .card {
-            background: white;
-            border-radius: 8px;
+            background: #fff;
+            border-radius: 16px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eee;
         }
         
+        /* 버튼 */
         .btn {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
         }
         
         .btn-primary {
-            background-color: #1db954;
+            background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(29, 185, 84, 0.3);
         }
         
         .btn-primary:hover {
-            background-color: #1ed760;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.4);
         }
         
         .btn-secondary {
-            background-color: #535353;
-            color: white;
+            background-color: #f5f5f5;
+            color: #555;
+            border: 1px solid #e0e0e0;
         }
         
         .btn-secondary:hover {
-            background-color: #656565;
+            background-color: #eee;
+            border-color: #d0d0d0;
         }
         
+        /* 검색창 */
         .search-box {
             width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 25px;
+            padding: 0.9rem 1.2rem;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
             font-size: 1rem;
             outline: none;
+            transition: all 0.2s;
+            background-color: #fafafa;
         }
         
         .search-box:focus {
             border-color: #1db954;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
         }
         
         /* 로딩 스피너 */
@@ -113,7 +157,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(255,255,255,0.9);
             display: none;
             justify-content: center;
             align-items: center;
@@ -125,12 +169,12 @@
         }
         
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #333;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e8e8e8;
             border-top-color: #1db954;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
         
         @keyframes spin {
@@ -149,12 +193,13 @@
         }
         
         .toast {
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.9rem 1.4rem;
+            border-radius: 12px;
             color: white;
             font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -165,11 +210,11 @@
         }
         
         .toast-error {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
         }
         
         .toast-info {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: linear-gradient(135deg, #4a9eff, #3b8de8);
         }
         
         @keyframes slideIn {
@@ -183,25 +228,19 @@
             }
         }
         
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-        
-        /* 플레이어 */
+        /* 하단 플레이어 */
         #bottom-player {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to top, #1a1a1a, #2a2a2a);
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            background: #fff;
+            color: #333;
+            padding: 0.8rem 2rem;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             display: none;
             z-index: 1000;
+            border-top: 1px solid #eee;
         }
         
         #bottom-player.active {
@@ -212,7 +251,7 @@
             max-width: 1200px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 300px 1fr 250px;
+            grid-template-columns: 280px 1fr 200px;
             gap: 2rem;
             align-items: center;
         }
@@ -224,52 +263,57 @@
         }
         
         .player-thumbnail {
-            width: 60px;
-            height: 60px;
-            border-radius: 4px;
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
             object-fit: cover;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .player-text h4 {
-            margin-bottom: 0.3rem;
-            font-size: 1rem;
+            margin-bottom: 0.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
         }
         
         .player-text p {
-            color: #aaa;
-            font-size: 0.9rem;
+            color: #888;
+            font-size: 0.85rem;
         }
         
         .player-controls {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
         
         .control-buttons {
             display: flex;
             justify-content: center;
-            gap: 1rem;
+            gap: 0.8rem;
             align-items: center;
         }
         
         .control-btn {
             background: none;
             border: none;
-            color: white;
-            font-size: 1.5rem;
+            color: #666;
+            font-size: 1.3rem;
             cursor: pointer;
-            transition: color 0.3s;
-            padding: 0.5rem;
+            transition: all 0.2s;
+            padding: 0.4rem;
+            border-radius: 50%;
         }
         
         .control-btn:hover {
             color: #1db954;
+            background-color: rgba(29, 185, 84, 0.1);
         }
         
         .control-btn.active {
@@ -277,7 +321,12 @@
         }
         
         .play-btn {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
+            color: #1db954;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.05);
         }
         
         .progress-container {
@@ -287,24 +336,29 @@
         }
         
         .time {
-            font-size: 0.8rem;
-            color: #aaa;
-            min-width: 40px;
+            font-size: 0.75rem;
+            color: #999;
+            min-width: 36px;
+            font-weight: 500;
         }
         
         .progress-bar {
             flex: 1;
-            height: 6px;
-            background: #444;
-            border-radius: 3px;
+            height: 4px;
+            background: #e8e8e8;
+            border-radius: 2px;
             cursor: pointer;
             position: relative;
         }
         
+        .progress-bar:hover {
+            height: 6px;
+        }
+        
         .progress {
             height: 100%;
-            background: #1db954;
-            border-radius: 3px;
+            background: linear-gradient(90deg, #1db954, #1ed760);
+            border-radius: 2px;
             width: 0%;
             position: relative;
         }
@@ -312,15 +366,16 @@
         .progress::after {
             content: '';
             position: absolute;
-            right: -6px;
+            right: -5px;
             top: 50%;
             transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: white;
+            width: 10px;
+            height: 10px;
+            background: #1db954;
             border-radius: 50%;
             opacity: 0;
             transition: opacity 0.2s;
+            box-shadow: 0 1px 4px rgba(29, 185, 84, 0.4);
         }
         
         .progress-bar:hover .progress::after {
@@ -330,23 +385,68 @@
         .player-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 0.5rem;
+            gap: 0.3rem;
             align-items: center;
         }
         
         .volume-control {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
         
         .volume-slider {
-            width: 80px;
+            width: 70px;
             cursor: pointer;
+            accent-color: #1db954;
         }
         
+        /* 유저 영역 */
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
         
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6px 0 6px 10px;
+            border-color: transparent transparent transparent white;
+            margin-left: 2px;
+        }
+
+        .player-text-link {
+            text-decoration: none;
+            color: inherit;
+            transition: opacity 0.2s;
+        }
+
+        .player-text-link:hover {
+            opacity: 0.8;
+        }
+        
+        .player-text-link:hover h4 {
+            color: #1db954;
+        }
     </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -362,13 +462,20 @@
         <ul>
             <li><a href="{% url 'music_explore:search' %}" class="logo">🎵 TwoBeats</a></li>
             <li><a href="{% url 'music_explore:search' %}">음악 검색</a></li>
-            <li><a href="{% url 'music_explore:chart_all' %}">음악 차트</a></li>
+            <li><a href="{% url 'music_explore:chart_all' %}">차트</a></li>
             
             <li style="margin-left: auto;">
                 {% if user.is_authenticated %}
-                    <span style="color: #aaa;">{{ user.username }}님</span>
+                    <div class="user-area">
+                        {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" class="user-avatar" style="object-fit: cover;">
+                        {% else %}
+                            <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                        {% endif %}
+                        <span>{{ user.username }}</span>
+                    </div>
                 {% else %}
-                    <a href="/admin/">로그인</a>
+                    <a href="/admin/" class="btn btn-primary" style="padding: 0.4rem 1rem; font-size: 0.85rem;">로그인</a>
                 {% endif %}
             </li>
         </ul>
@@ -382,6 +489,7 @@
         <div class="player-content">
             <div class="player-info">
                 <div id="player-thumbnail" class="player-thumbnail">🎵</div>
+                <a href="#" id="player-link" class="player-text-link">
                 <div class="player-text">
                     <h4 id="player-title">음악을 선택하세요</h4>
                     <p id="player-artist">-</p>
@@ -409,7 +517,7 @@
                 <button class="control-btn" id="like-btn-player" onclick="toggleLikePlayer()" title="좋아요">🤍</button>
                 <button class="control-btn" onclick="addToPlaylist()" title="플레이리스트에 추가">📋</button>
                 <div class="volume-control">
-                    <span>🔊</span>
+                    <button class="control-btn" id="volume-icon" onclick="toggleMute()" style="font-size: 1.1rem;">🔊</button>
                     <input type="range" min="0" max="100" value="100" 
                            class="volume-slider" id="volume-slider" 
                            oninput="changeVolume(this.value)">
@@ -422,42 +530,7 @@
 
     <script>
         // ===== 유틸리티 함수 =====
-
-        // 키보드 단축키
-        document.addEventListener('keydown', function(e) {
-            // 입력 중이면 무시 (검색창, 댓글 등)
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return;
-            }
-    
-            switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    togglePlay();
-                    break;
-            case 'ArrowLeft':
-                if (audio.src) {
-                    audio.currentTime -= 5;  // 5초 뒤로
-                }
-                break;
-            case 'ArrowRight':
-                if (audio.src) {
-                    audio.currentTime += 5;  // 5초 앞으로
-                }
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                changeVolume(Math.min(100, audio.volume * 100 + 10));
-                document.getElementById('volume-slider').value = audio.volume * 100;
-                break;
-            case 'ArrowDown':
-                e.preventDefault();
-                changeVolume(Math.max(0, audio.volume * 100 - 10));
-                document.getElementById('volume-slider').value = audio.volume * 100;
-                break;
-            }
-        });
-
+        
         function showLoading() {
             document.getElementById('loading-overlay').classList.add('active');
         }
@@ -472,8 +545,8 @@
             toast.className = `toast toast-${type}`;
             
             let icon = 'ℹ️';
-            if (type === 'success') icon = '✅';
-            if (type === 'error') icon = '❌';
+            if (type === 'success') icon = '✓';
+            if (type === 'error') icon = '✕';
             
             toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
             container.appendChild(toast);
@@ -502,6 +575,12 @@
         
         // 페이지 로드 시 실행
         document.addEventListener('DOMContentLoaded', function() {
+
+            // 볼륨 아이콘 초기화
+            if (savedVolume) {
+                updateVolumeIcon(parseFloat(savedVolume) * 100);
+            }
+
             // 재생목록 구성
             const playButtons = document.querySelectorAll('[data-id]');
             playButtons.forEach(btn => {
@@ -530,7 +609,7 @@
                 
                 const thumbnailEl = document.getElementById('player-thumbnail');
                 if (music.thumbnail) {
-                    thumbnailEl.innerHTML = '<img src="' + music.thumbnail + '" style="width: 60px; height: 60px; border-radius: 4px; object-fit: cover;">';
+                    thumbnailEl.innerHTML = '<img src="' + music.thumbnail + '" style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover;">';
                 } else {
                     thumbnailEl.innerHTML = '🎵';
                 }
@@ -563,7 +642,7 @@
                             likeBtn.style.color = '#1db954';
                         } else {
                             likeBtn.textContent = '🤍';
-                            likeBtn.style.color = 'white';
+                            likeBtn.style.color = '#666';
                         }
                     });
                 {% endif %}
@@ -621,7 +700,7 @@
             
             const thumbnailEl = document.getElementById('player-thumbnail');
             if (thumbnailUrl) {
-                thumbnailEl.innerHTML = '<img src="' + thumbnailUrl + '" style="width: 60px; height: 60px; border-radius: 4px; object-fit: cover;">';
+                thumbnailEl.innerHTML = '<img src="' + thumbnailUrl + '" style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover;">';
             } else {
                 thumbnailEl.innerHTML = '🎵';
             }
@@ -632,6 +711,7 @@
             player.classList.add('active');
             
             showToast(`🎵 ${title} - ${artist}`, 'info');
+            
             // 재생수 증가 API 호출
             fetch('/music/play/' + musicId + '/')
                 .then(response => response.json())
@@ -649,27 +729,38 @@
                         likeBtn.style.color = '#1db954';
                     } else {
                         likeBtn.textContent = '🤍';
-                        likeBtn.style.color = 'white';
+                        likeBtn.style.color = '#666';
                     }
                     currentMusicData.is_liked = data.is_liked;
                     currentMusicData.like_count = data.like_count;
                 });
             {% endif %}
+            document.getElementById('player-link').href = '/music/detail/' + musicId + '/';
         }
         
         function playMusicFromData(btn) {
-            const id = parseInt(btn.dataset.id);
-            const title = btn.dataset.title;
-            const singer = btn.dataset.singer;
-            const url = btn.dataset.url;
-            const thumb = btn.dataset.thumb || null;
-            
-            if (!url) {
-                showToast('음원 파일이 없습니다.', 'error');
+            // 같은 곡 클릭 시 일시정지/재생 토글
+            if (currentMusicData && currentMusicData.id === id) {
+                togglePlay();
+                // 버튼 아이콘 변경
+                if (audio.paused) {
+                    btn.textContent = '▶';
+                } else {
+                    btn.textContent = '⏸';
+                }
                 return;
             }
-            
+
+            // 모든 버튼 초기화
+            document.querySelectorAll('.chart-play-btn, .music-play-btn').forEach(b => {
+                b.textContent = '▶';
+            });
+
+            // 새 곡 재생
             playMusic(id, title, singer, url, thumb);
+
+            // 현재 버튼만 일시정지로
+            btn.textContent = '⏸';
         }
         
         function togglePlay() {
@@ -840,8 +931,31 @@
         function changeVolume(value) {
             audio.volume = value / 100;
             localStorage.setItem('volume', value / 100);
+            updateVolumeIcon(value);
         }
-        
+        function updateVolumeIcon(value) {
+            const icon = document.getElementById('volume-icon');
+            if (value == 0) {
+                icon.textContent = '🔇';
+            } else if (value < 30) {
+                icon.textContent = '🔈';
+            } else if (value < 70) {
+                icon.textContent = '🔉';
+            } else {
+                icon.textContent = '🔊';
+            }
+        }
+        function toggleMute() {
+            const slider = document.getElementById('volume-slider');    
+            if (audio.volume > 0) {
+                slider.value = 0;
+                changeVolume(0);
+            } else {
+                slider.value = previousVolume;
+                changeVolume(previousVolume);
+            }
+        }
+
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
             const mins = Math.floor(seconds / 60);
@@ -875,7 +989,7 @@
                     showToast('좋아요 추가!', 'success');
                 } else {
                     likeBtn.textContent = '🤍';
-                    likeBtn.style.color = 'white';
+                    likeBtn.style.color = '#666';
                     showToast('좋아요 취소', 'info');
                 }
                 
@@ -903,6 +1017,54 @@
             }
             return cookieValue;
         }
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // 입력 중이면 무시
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowLeft':
+                    if (audio.src) {
+                        audio.currentTime -= 5;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (audio.src) {
+                        audio.currentTime += 5;
+                    }
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    changeVolume(Math.min(100, audio.volume * 100 + 10));
+                    document.getElementById('volume-slider').value = audio.volume * 100;
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    changeVolume(Math.max(0, audio.volume * 100 - 10));
+                    document.getElementById('volume-slider').value = audio.volume * 100;
+                    break;
+            }
+        });
+        audio.addEventListener('play', function() {
+            if (currentMusicData) {
+                const btn = document.querySelector(`[data-id="${currentMusicData.id}"].chart-play-btn, [data-id="${currentMusicData.id}"].music-play-btn`);
+                if (btn) btn.textContent = '⏸';
+            }
+        });
+        
+        audio.addEventListener('pause', function() {
+            if (currentMusicData) {
+                const btn = document.querySelector(`[data-id="${currentMusicData.id}"].chart-play-btn, [data-id="${currentMusicData.id}"].music-play-btn`);
+                if (btn) btn.textContent = '▶';
+            }
+        });
     </script>
 
     {% block extra_js %}{% endblock %}
