@@ -1,0 +1,208 @@
+<!-- 검색 자동완성 스타일 -->
+<style>
+    .search-box {
+        position: relative;
+    }
+
+    .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #00CD3C;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .autocomplete-dropdown.active {
+        display: block;
+    }
+
+    .autocomplete-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+        background-color: #f0f9f4;
+    }
+
+    .autocomplete-text {
+        flex: 1;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .autocomplete-type {
+        color: #999;
+        font-size: 12px;
+    }
+
+    .no-results {
+        padding: 12px 20px;
+        text-align: center;
+        color: #999;
+        font-size: 14px;
+    }
+</style>
+
+<!-- 검색 자동완성 스크립트 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const searchForm = document.getElementById('search-form');
+        const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+
+        let debounceTimer;
+        let selectedIndex = -1;
+        let autocompleteItems = [];
+
+        // 입력 이벤트 (Debounce 처리)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            // 2글자 미만이면 자동완성 숨김
+            if (query.length < 2) {
+                hideAutocomplete();
+                return;
+            }
+
+            // 300ms 후 자동완성 요청
+            debounceTimer = setTimeout(() => {
+                fetchAutocomplete(query);
+            }, 300);
+        });
+
+        // 자동완성 데이터 가져오기
+        function fetchAutocomplete(query) {
+            fetch(`/video/autocomplete/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayAutocomplete(data.results);
+                })
+                .catch(error => {
+                    console.error('자동완성 오류:', error);
+                });
+        }
+
+        // 자동완성 결과 표시
+        function displayAutocomplete(results) {
+            autocompleteDropdown.innerHTML = '';
+            autocompleteItems = results;
+            selectedIndex = -1;
+
+            if (results.length === 0) {
+                autocompleteDropdown.innerHTML = '<div class="no-results">검색 결과가 없습니다.</div>';
+                autocompleteDropdown.classList.add('active');
+                return;
+            }
+
+            results.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.setAttribute('data-index', index);
+
+                const typeText = item.type === 'video' ? '영상' : '아티스트';
+
+                div.innerHTML = `
+                    <span class="autocomplete-text">${item.text}</span>
+                    <span class="autocomplete-type">${typeText}</span>
+                `;
+
+                div.addEventListener('click', function() {
+                    selectItem(item.text);
+                });
+
+                autocompleteDropdown.appendChild(div);
+            });
+
+            autocompleteDropdown.classList.add('active');
+        }
+
+        // 자동완성 숨기기
+        function hideAutocomplete() {
+            autocompleteDropdown.classList.remove('active');
+            selectedIndex = -1;
+        }
+
+        // 항목 선택
+        function selectItem(text) {
+            searchInput.value = text;
+            hideAutocomplete();
+            searchForm.submit();
+        }
+
+        // 키보드 이벤트 (화살표, Enter, Esc)
+        searchInput.addEventListener('keydown', function(e) {
+            const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+
+            if (items.length === 0) return;
+
+            // 아래 화살표
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            }
+            // 위 화살표
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+            }
+            // Enter
+            else if (e.key === 'Enter') {
+                if (selectedIndex >= 0 && selectedIndex < autocompleteItems.length) {
+                    e.preventDefault();
+                    selectItem(autocompleteItems[selectedIndex].text);
+                }
+            }
+            // Esc
+            else if (e.key === 'Escape') {
+                hideAutocomplete();
+            }
+        });
+
+        // 선택 상태 업데이트
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // 검색창 외부 클릭 시 자동완성 숨기기
+        document.addEventListener('click', function(e) {
+            if (!searchForm.contains(e.target)) {
+                hideAutocomplete();
+            }
+        });
+
+        // 검색창 포커스 시 자동완성 다시 표시 (결과가 있을 때)
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2 && autocompleteItems.length > 0) {
+                autocompleteDropdown.classList.add('active');
+            }
+        });
+    });
+</script>

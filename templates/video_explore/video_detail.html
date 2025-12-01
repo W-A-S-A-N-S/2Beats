@@ -23,41 +23,6 @@
             padding: 20px;
         }
 
-        /* 메뉴바 */
-        .menu-bar {
-            background-color: #fff;
-            border-bottom: 2px solid #e0e0e0;
-            padding: 15px 0;
-            margin-bottom: 20px;
-        }
-
-        .menu-tabs {
-            display: flex;
-            gap: 30px;
-            overflow-x: auto;
-        }
-
-        .menu-tab {
-            padding: 10px 15px;
-            cursor: pointer;
-            white-space: nowrap;
-            text-decoration: none;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .menu-tab:hover {
-            background-color: rgba(0, 205, 60, 0.1);
-            color: #00CD3C;
-        }
-
-        .menu-tab.active {
-            color: #00CD3C;
-            border-bottom-color: #00CD3C;
-            font-weight: bold;
-        }
-
         /* 검색창 */
         .search-box {
             margin: 20px 0;
@@ -280,28 +245,54 @@
 </head>
 <body>
     <div class="container">
-        <!-- 메뉴바 -->
-        <div class="menu-bar">
-            <div class="menu-tabs">
-                <a href="{% url 'video_explore:video_list' %}" class="menu-tab {% if not video.video_type %}active{% endif %}">전체</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'mv' %}" class="menu-tab {% if video.video_type == 'mv' %}active{% endif %}">뮤직비디오</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'performance' %}" class="menu-tab {% if video.video_type == 'performance' %}active{% endif %}">퍼포먼스</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'live' %}" class="menu-tab {% if video.video_type == 'live' %}active{% endif %}">라이브</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'cover' %}" class="menu-tab {% if video.video_type == 'cover' %}active{% endif %}">커버</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'dance' %}" class="menu-tab {% if video.video_type == 'dance' %}active{% endif %}">댄스 영상</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'documentary' %}" class="menu-tab {% if video.video_type == 'documentary' %}active{% endif %}">다큐멘터리</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'behind' %}" class="menu-tab {% if video.video_type == 'behind' %}active{% endif %}">비하인드</a>
-                <a href="{% url 'video_explore:video_list_by_type' 'etc' %}" class="menu-tab {% if video.video_type == 'etc' %}active{% endif %}">기타</a>
-            </div>
-        </div>
-
         <!-- 검색창 -->
         <div class="search-box">
-            <form method="get" action="{% url 'video_explore:video_list' %}" style="display: flex; flex: 1; gap: 10px;">
-                <input type="text" name="q" placeholder="영상 제목이나 아티스트를 검색하세요...">
+            <form id="search-form" method="get" action="{% url 'video_explore:video_list' %}" style="display: flex; flex: 1; gap: 10px;">
+                <input id="search-input" type="text" name="q" placeholder="영상 제목이나 아티스트를 검색하세요..." autocomplete="off">
+                <input type="hidden" name="type" value="{{ video.video_type|default:'' }}">
                 <button type="submit">검색</button>
             </form>
+            <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
         </div>
+
+        <!-- 영상 타입 선택 -->
+        <div style="margin: 20px 0;">
+            <select id="video-type-select" style="padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; cursor: pointer; background-color: white; min-width: 200px;">
+                <option value="">전체</option>
+                <option value="mv" {% if video.video_type == 'mv' %}selected{% endif %}>뮤직비디오</option>
+                <option value="performance" {% if video.video_type == 'performance' %}selected{% endif %}>퍼포먼스</option>
+                <option value="live" {% if video.video_type == 'live' %}selected{% endif %}>라이브</option>
+                <option value="cover" {% if video.video_type == 'cover' %}selected{% endif %}>커버</option>
+                <option value="dance" {% if video.video_type == 'dance' %}selected{% endif %}>댄스 영상</option>
+                <option value="documentary" {% if video.video_type == 'documentary' %}selected{% endif %}>다큐멘터리</option>
+                <option value="behind" {% if video.video_type == 'behind' %}selected{% endif %}>비하인드</option>
+                <option value="etc" {% if video.video_type == 'etc' %}selected{% endif %}>기타</option>
+            </select>
+        </div>
+
+        <script>
+            // 드롭다운 변경 시 페이지 이동 (검색어 유지)
+            document.getElementById('video-type-select').addEventListener('change', function() {
+                const selectedType = this.value;
+                const searchQuery = document.getElementById('search-input').value;
+
+                let url = '/video/';
+                const params = [];
+
+                if (selectedType) {
+                    params.push(`type=${selectedType}`);
+                }
+                if (searchQuery) {
+                    params.push(`q=${encodeURIComponent(searchQuery)}`);
+                }
+
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+
+                window.location.href = url;
+            });
+        </script>
 
         <!-- 영상 플레이어 -->
         <div class="video-player">
@@ -336,9 +327,15 @@
                 {% endif %}
 
                 {% if video.video_root %}
-                <a href="{{ video.video_root.url }}" download class="action-btn" style="text-decoration: none; color: inherit;">
-                    📥 다운로드
-                </a>
+                    {% if user.is_authenticated %}
+                    <a href="{{ video.video_root.url }}" download class="action-btn" style="text-decoration: none; color: inherit;">
+                        📥 다운로드
+                    </a>
+                    {% else %}
+                    <button class="action-btn" onclick="alert('로그인이 필요합니다.')">
+                        📥 다운로드
+                    </button>
+                    {% endif %}
                 {% endif %}
             </div>
 
@@ -490,5 +487,8 @@
             });
         }
     </script>
+
+    <!-- 검색 자동완성 -->
+    {% include 'video_explore/search_autocomplete.html' %}
 </body>
 </html>

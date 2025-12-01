@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ranged_response import RangedFileResponse
 
-from apps.twobeats_upload.models import Video
+from apps.twobeats_upload.models import Video, Tag
 from .models import VideoLike, VideoComment
 
 
@@ -21,9 +21,17 @@ def video_list(request, video_type=None):
     # 기본 쿼리셋
     videos = Video.objects.all()
 
-    # 타입별 필터링
+    # 타입별 필터링 (URL 파라미터 또는 GET 파라미터)
+    if not video_type:
+        video_type = request.GET.get('type', '').strip() or None
+
     if video_type:
         videos = videos.filter(video_type=video_type)
+
+    # 태그 필터링
+    selected_tag = request.GET.get('tag', '').strip() or None
+    if selected_tag:
+        videos = videos.filter(tags__name=selected_tag)
 
     # 검색 기능
     search_query = request.GET.get('q', '').strip()
@@ -44,8 +52,10 @@ def video_list(request, video_type=None):
         )
     ).order_by('-popularity_score')[:3]
 
-    # 일반 영상 리스트 (최신순)
-    videos = videos.order_by('-video_created_at')
+    # 일반 영상 리스트 (최신순, 좋아요 수 포함)
+    videos = videos.annotate(
+        like_count=Count('videolike', distinct=True)
+    ).order_by('-video_created_at')
 
     # 페이지네이션 (한 페이지당 16개)
     paginator = Paginator(videos, 16)
@@ -55,6 +65,11 @@ def video_list(request, video_type=None):
     # 영상 타입 선택지 가져오기
     video_types = Video.GENRE_CHOICES
 
+    # 모든 태그 가져오기 (사용 빈도순)
+    all_tags = Tag.objects.annotate(
+        video_count=Count('videos')
+    ).filter(video_count__gt=0).order_by('-video_count')
+
     context = {
         'videos': page_obj,
         'top_videos': top_videos,
@@ -62,6 +77,8 @@ def video_list(request, video_type=None):
         'video_types': video_types,
         'search_query': search_query,
         'page_obj': page_obj,
+        'all_tags': all_tags,
+        'selected_tag': selected_tag,
     }
 
     return render(request, 'video_explore/video_list.html', context)
@@ -77,17 +94,12 @@ def video_detail(request, video_id):
 
     video = get_object_or_404(Video, pk=video_id)
 
-    # 조회수 증가 (계정 기반 + Django Cache + 24시간 제한)
-    from django.core.cache import cache
-
-    cache_key = f'video_viewed_{video_id}_{request.user.pk}'
-
-    if not cache.get(cache_key):
-        # 24시간 내 조회 기록이 없으면 조회수 증가
+    # 조회수 증가 (세션으로 중복 방지)
+    viewed_key = f'viewed_video_{video_id}'
+    if not request.session.get(viewed_key):
         video.video_views += 1
         video.save(update_fields=['video_views'])
-        cache.set(cache_key, True, 60*60*24)  # 24시간 동안 캐시 저장
-        # cache.set(cache_key, True, 60)  # 테스트용 1분분
+        request.session[viewed_key] = True
 
     # 현재 사용자의 좋아요 상태 확인
     is_liked = False
@@ -169,21 +181,22 @@ def increase_play_count(request, video_id):
 
     video = get_object_or_404(Video, pk=video_id)
 
-    # 재생수 증가 (계정 기반 + Django Cache + 24시간 제한)
-    from django.core.cache import cache
-
-    cache_key = f'video_played_{video_id}_{request.user.pk}'
-
-    if not cache.get(cache_key):
-        # 24시간 내 재생 기록이 없으면 재생수 증가
+    # 재생수 증가 (세션으로 중복 방지)
+    played_key = f'played_video_{video_id}'
+    if not request.session.get(played_key):
         video.video_play_count += 1
         video.save(update_fields=['video_play_count'])
-        cache.set(cache_key, True, 60*60*24)  # 24시간 동안 캐시 저장
-        # cache.set(cache_key, True, 60)  # 테스트용 1분
+        request.session[played_key] = True
+        return JsonResponse({
+            'success': True,
+            'play_count': video.video_play_count,
+            'message': '재생수 증가'
+        })
 
     return JsonResponse({
-        'success': True,
+        'success': False,
         'play_count': video.video_play_count,
+        'message': '이미 카운트됨'
     })
 
 
@@ -313,3 +326,48 @@ def stream_video(request, video_id):
     )
 
     return response
+
+
+def autocomplete(request):
+    """검색 자동완성 (AJAX)"""
+
+    query = request.GET.get('q', '').strip()
+
+    # 최소 2글자 이상 입력해야 검색
+    if len(query) < 1:
+        return JsonResponse({'results': []})
+
+    # 영상 제목 검색
+    video_titles_query = Video.objects.filter(
+        video_title__icontains=query
+    ).values_list('video_title', flat=True)
+
+    # Python에서 중복 제거 (순서 유지)
+    video_titles = list(dict.fromkeys(video_titles_query))[:5]
+
+    # 아티스트명 검색
+    artists_query = Video.objects.filter(
+        video_singer__icontains=query
+    ).values_list('video_singer', flat=True)
+
+    # Python에서 중복 제거 (순서 유지)
+    artists = list(dict.fromkeys(artists_query))[:5]
+
+    # 결과 조합
+    results = []
+
+    # 영상 제목 추가
+    for title in video_titles:
+        results.append({
+            'type': 'video',
+            'text': title
+        })
+
+    # 아티스트명 추가
+    for artist in artists:
+        results.append({
+            'type': 'artist',
+            'text': artist
+        })
+
+    return JsonResponse({'results': results[:8]})

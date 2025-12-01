@@ -23,43 +23,6 @@
             padding: 20px;
         }
 
-        /* 메뉴바 */
-        .menu-bar {
-            background-color: #fff;
-            border-bottom: 2px solid #e0e0e0;
-            padding: 15px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .menu-tabs {
-            display: flex;
-            gap: 30px;
-            overflow-x: auto;
-        }
-
-        .menu-tab {
-            padding: 10px 15px;
-            cursor: pointer;
-            white-space: nowrap;
-            text-decoration: none;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .menu-tab:hover {
-            background-color: rgba(0, 205, 60, 0.1);
-            color: #00CD3C;
-        }
-
-        .menu-tab.active {
-            color: #00CD3C;
-            border-bottom-color: #00CD3C;
-            font-weight: bold;
-        }
-
         /* 검색창 */
         .search-box {
             margin: 20px 0;
@@ -188,6 +151,22 @@
             font-size: 13px;
         }
 
+        .top-video-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .top-video-card .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: #e8f5e9;
+            color: #00CD3C;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
         /* 영상 그리드 */
         .video-grid {
             display: grid;
@@ -261,6 +240,22 @@
             font-size: 12px;
         }
 
+        .video-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .video-card .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: #e8f5e9;
+            color: #00CD3C;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
         /* 페이지네이션 */
         .pagination {
             display: flex;
@@ -306,26 +301,36 @@
 </head>
 <body>
     <div class="container">
-        <!-- 메뉴바 -->
-        <div class="menu-bar">
-            <div class="menu-tabs">
-                <a href="{% url 'video_explore:video_list' %}" class="menu-tab {% if not current_type %}active{% endif %}">전체</a>
-                {% for type_code, type_name in video_types %}
-                <a href="{% url 'video_explore:video_list_by_type' type_code %}"
-                   class="menu-tab {% if current_type == type_code %}active{% endif %}">
-                    {{ type_name }}
-                </a>
-                {% endfor %}
+        <!-- 검색 및 필터 -->
+        <form id="search-form" method="get" action="{% url 'video_explore:video_list' %}">
+            <!-- 검색창 -->
+            <div class="search-box" style="position: relative;">
+                <input id="search-input" type="text" name="q" placeholder="영상 제목이나 아티스트를 검색하세요..." value="{{ search_query }}" autocomplete="off" style="width: 100%; padding: 12px 20px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 14px;">
+                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
             </div>
-        </div>
 
-        <!-- 검색창 -->
-        <div class="search-box">
-            <form method="get" action="{% url 'video_explore:video_list' %}" style="display: flex; flex: 1; gap: 10px;">
-                <input type="text" name="q" placeholder="영상 제목이나 아티스트를 검색하세요..." value="{{ search_query }}">
-                <button type="submit">검색</button>
-            </form>
-        </div>
+            <!-- 필터 선택 및 검색 버튼 -->
+            <div style="margin: 20px 0; display: flex; gap: 10px;">
+                <!-- 영상 타입 선택 -->
+                <select name="type" id="video-type-select" style="flex: 1; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; cursor: pointer; background-color: white;">
+                    <option value="" {% if not current_type %}selected{% endif %}>장르: 전체</option>
+                    {% for type_code, type_name in video_types %}
+                    <option value="{{ type_code }}" {% if current_type == type_code %}selected{% endif %}>장르: {{ type_name }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- 태그 선택 -->
+                <select name="tag" id="tag-select" style="flex: 1; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; cursor: pointer; background-color: white;">
+                    <option value="" {% if not selected_tag %}selected{% endif %}>태그: 전체</option>
+                    {% for tag in all_tags %}
+                    <option value="{{ tag.name }}" {% if selected_tag == tag.name %}selected{% endif %}>태그: #{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- 검색 버튼 -->
+                <button type="submit" style="padding: 12px 30px; background-color: #00CD3C; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; white-space: nowrap;">검색</button>
+            </div>
+        </form>
 
         {% if search_query %}
         <p style="color: #666; margin: 10px 0;">
@@ -351,7 +356,14 @@
                     <div class="info">
                         <div class="title">{{ video.video_title }}</div>
                         <div class="singer">{{ video.video_singer }}</div>
-                        <div class="views">조회수 {{ video.video_views|default:0 }}</div>
+                        <div class="views">조회수 {{ video.video_views|default:0 }} | 좋아요 {{ video.like_count|default:0 }}</div>
+                        {% if video.tags.all %}
+                        <div class="tags">
+                            {% for tag in video.tags.all|slice:":3" %}
+                            <span class="tag">#{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </a>
                 {% endfor %}
@@ -379,7 +391,14 @@
                 <div class="info">
                     <div class="title">{{ video.video_title }}</div>
                     <div class="singer">{{ video.video_singer }}</div>
-                    <div class="views">조회수 {{ video.video_views|default:0 }}</div>
+                    <div class="views">조회수 {{ video.video_views|default:0 }} | 좋아요 {{ video.like_count|default:0 }}</div>
+                    {% if video.tags.all %}
+                    <div class="tags">
+                        {% for tag in video.tags.all|slice:":3" %}
+                        <span class="tag">#{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </a>
             {% endfor %}
@@ -414,5 +433,8 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- 검색 자동완성 -->
+    {% include 'video_explore/search_autocomplete.html' %}
 </body>
 </html>
