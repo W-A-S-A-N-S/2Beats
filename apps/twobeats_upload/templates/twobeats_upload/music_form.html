@@ -1,0 +1,14 @@
+{# templates/twobeats_upload/music_form.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{% if music %}음악 수정{% else %}새 음악 업로드{% endif %}</h1>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">저장</button>
+  </form>
+
+  <a href="{% url 'twobeats_upload:music_list' %}">목록으로</a>
+{% endblock %}

@@ -1,0 +1,29 @@
+{# templates/twobeats_upload/music_detail.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{{ music.music_title }} - {{ music.music_singer }}</h1>
+
+  <p>장르: {{ music.get_music_type_display }}</p>
+  <p>재생수: {{ music.music_count }}</p>
+  <p>좋아요: {{ music.music_like_count }}</p>
+  <p>태그:
+    {% for tag in music.tags.all %}
+      #{{ tag.name }}
+    {% empty %}
+      태그 없음
+    {% endfor %}
+  </p>
+
+  {% if music.music_thumbnail %}
+    <img src="{{ music.music_thumbnail.url }}" alt="thumbnail" style="max-width:200px;">
+  {% endif %}
+
+  <p>
+    <a href="{{ music.music_root.url }}">음원 파일 다운로드 / 재생</a>
+  </p>
+
+  <a href="{% url 'twobeats_upload:music_update' music.pk %}">수정</a>
+  <a href="{% url 'twobeats_upload:music_delete' music.pk %}">삭제</a>
+  <a href="{% url 'twobeats_upload:music_list' %}">목록으로</a>
+{% endblock %}

@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('apps.twobeats_upload.urls', namespace='twobeats_upload')),
 ]
 
 if settings.DEBUG:

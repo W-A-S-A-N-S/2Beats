@@ -1,0 +1,84 @@
+{# templates/twobeats_upload/music_list.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="tb-page-title">Music</h1>
+  <p class="tb-page-subtitle">음악 업로드</p>
+
+  <div class="tb-header-actions">
+    <a href="{% url 'twobeats_upload:music_create' %}" class="tb-primary-btn">
+      + 음악 업로드
+    </a>
+  </div>
+  
+  <div class="tb-toolbar">
+    <div class="tb-toolbar-group">
+      <a href="?order=latest{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+         class="tb-chip {% if current_order == 'latest' %}active{% endif %}">
+        최신순
+      </a>
+      <a href="?order=views{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+         class="tb-chip {% if current_order == 'views' %}active{% endif %}">
+        조회수순
+      </a>
+      <a href="?order=likes{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+         class="tb-chip {% if current_order == 'likes' %}active{% endif %}">
+        좋아요순
+      </a>
+    </div>
+
+    <div class="tb-toolbar-group">
+      <a href="?{% if current_order %}order={{ current_order }}{% endif %}"
+         class="tb-tag-chip {% if not current_tag_id %}active{% endif %}">
+        전체 태그
+      </a>
+      {% for tag in tags %}
+        <a href="?order={{ current_order }}&tag={{ tag.id }}"
+           class="tb-tag-chip {% if current_tag_id|default:'' == tag.id|stringformat:'s' %}active{% endif %}">
+          #{{ tag.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="tb-grid">
+    {% for music in musics %}
+      <article class="tb-card">
+        <a href="{% url 'twobeats_upload:music_detail' music.pk %}" class="tb-card-main-link">
+          {% if music.music_thumbnail %}
+            <img src="{{ music.music_thumbnail.url }}" alt="{{ music.music_title }}" class="tb-thumb">
+          {% else %}
+            <div class="tb-thumb-placeholder">
+              No Thumbnail
+            </div>
+          {% endif %}
+
+          <h3 class="tb-card-title">{{ music.music_title }}</h3>
+          <p class="tb-card-artist">{{ music.music_singer }}</p>
+
+          <div class="tb-card-meta">
+            <span class="tb-pill">{{ music.get_music_type_display }}</span>
+            <span>재생 {{ music.music_count }}</span>
+          </div>
+
+          {% if music.tags.all %}
+            <div style="font-size:0.78rem; color:var(--tb-subtext); margin-top:4px;">
+              {% for tag in music.tags.all|slice:":3" %}
+                #{{ tag.name }}
+              {% endfor %}
+              {% if music.tags.count > 3 %} …{% endif %}
+            </div>
+          {% endif %}
+        </a>
+
+        <div class="tb-card-footer">
+          <a href="{% url 'twobeats_upload:music_detail' music.pk %}" class="tb-small-text-btn">
+            자세히 보기 →
+          </a>
+        </div>
+      </article>
+    {% empty %}
+      <p>아직 업로드된 음악이 없어요.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

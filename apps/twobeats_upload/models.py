@@ -205,3 +205,46 @@ class Video(models.Model):
     
     def __str__(self):
         return self.video_title
+    
+class MusicLike(models.Model):
+    """음악 좋아요 (유저별 1곡당 1번)"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='music_likes',
+        verbose_name='유저'
+    )
+    music = models.ForeignKey(
+        Music,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='음악'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # 🔥 db_table 삭제 (Django가 자동으로 twobeats_upload_musiclike 같은 이름 생성)
+        verbose_name = '음악 좋아요'
+        verbose_name_plural = '음악 좋아요'
+        unique_together = ('user', 'music')  # 유저 1명당 한 곡에 한 번만
+
+class VideoLike(models.Model):
+    """영상 좋아요 (유저별 1영상당 1번)"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='video_likes',
+        verbose_name='유저'
+    )
+    video = models.ForeignKey(
+        Video,
+        on_delete=models.CASCADE,
+        related_name='likes',   # 🔥 video.likes 로 접근할 수 있게
+        verbose_name='영상'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '영상 좋아요'
+        verbose_name_plural = '영상 좋아요'
+        unique_together = ('user', 'video')  # 한 유저가 같은 영상에 한 번만

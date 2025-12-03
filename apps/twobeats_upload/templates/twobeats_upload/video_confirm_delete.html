@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>영상 삭제</h1>
+  <p>"{{ video.video_title }}" 영상을 정말 삭제할까요?</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit">삭제</button>
+    <a href="{% url 'twobeats_upload:video_detail' video.pk %}">취소</a>
+  </form>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}2Beats{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'twobeats_upload/style.css' %}">
+
+</head>
+<body>
+  <header class="tb-header">
+    <div class="tb-header-inner">
+      <a href="{% url 'twobeats_upload:music_list' %}" class="tb-logo">
+        2Beats
+      </a>
+      <nav class="tb-nav">
+        <a href="{% url 'twobeats_upload:music_list' %}"
+           class="tb-nav-link {% if request.path|slice:':7' == '/music/' %}active{% endif %}">
+          Music
+        </a>
+        <a href="{% url 'twobeats_upload:video_list' %}"
+           class="tb-nav-link {% if request.path|slice:':7' == '/video/' %}active{% endif %}">
+          Video
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="tb-main">
+    <div class="tb-container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</body>
+</html>

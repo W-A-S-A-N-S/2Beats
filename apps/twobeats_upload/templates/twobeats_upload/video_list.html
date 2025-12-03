@@ -1,0 +1,86 @@
+{# templates/twobeats_upload/video_list.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="tb-page-title">Video</h1>
+  <p class="tb-page-subtitle">뮤직비디오, 퍼포먼스, 라이브 영상들을 모아서 보는 공간입니다.</p>
+
+  <div class="tb-upload-actions">
+    <a href="{% url 'twobeats_upload:video_create' %}" class="tb-upload-btn tb-upload-btn-primary">
+      + 영상 업로드
+    </a>
+  </div>
+  <div class="tb-toolbar">
+    <div class="tb-toolbar-group">
+      <a href="?order=latest{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+         class="tb-chip {% if current_order == 'latest' %}active{% endif %}">
+        최신순
+      </a>
+      <a href="?order=views{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+         class="tb-chip {% if current_order == 'views' %}active{% endif %}">
+        조회수순
+      </a>
+      <a href="?order=views{% if current_tag_id %}&tag={{ current_tag_id }}{% endif %}"
+        class="tb-chip {% if current_order == 'views' %}active{% endif %}">
+        좋아요순
+      </a>
+    </div>
+
+    <div class="tb-toolbar-group">
+      <a href="?{% if current_order %}order={{ current_order }}{% endif %}"
+         class="tb-tag-chip {% if not current_tag_id %}active{% endif %}">
+        전체 태그
+      </a>
+      {% for tag in tags %}
+        <a href="?order={{ current_order }}&tag={{ tag.id }}"
+           class="tb-tag-chip {% if current_tag_id|default:'' == tag.id|stringformat:'s' %}active{% endif %}">
+          #{{ tag.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="tb-grid">
+    {% for video in videos %}
+      <article class="tb-card">
+        <a href="{% url 'twobeats_upload:video_detail' video.pk %}" class="tb-card-main-link">
+          {% if video.video_thumbnail %}
+            <img src="{{ video.video_thumbnail.url }}" alt="{{ video.video_title }}" class="tb-thumb">
+          {% else %}
+            <div class="tb-thumb-placeholder">
+              No Thumbnail
+            </div>
+          {% endif %}
+
+          <h3 class="tb-card-title">{{ video.video_title }}</h3>
+          <p class="tb-card-artist">{{ video.video_singer }}</p>
+
+          <div class="tb-card-meta">
+            <span class="tb-pill">{{ video.get_video_type_display }}</span>
+            <span>조회수 {{ video.video_views }}</span>
+            {% if video.video_time %}
+              <span>{{ video.video_time }}s</span>
+            {% endif %}
+          </div>
+
+          {% if video.tags.all %}
+            <div style="font-size:0.78rem; color:var(--tb-subtext); margin-top:4px;">
+              {% for tag in video.tags.all|slice:":3" %}
+                #{{ tag.name }}
+              {% endfor %}
+              {% if video.tags.count > 3 %} …{% endif %}
+            </div>
+          {% endif %}
+        </a>
+
+        <div class="tb-card-footer">
+          <a href="{% url 'twobeats_upload:video_detail' video.pk %}" class="tb-small-text-btn">
+            영상 보기 →
+          </a>
+        </div>
+      </article>
+    {% empty %}
+      <p>아직 업로드된 영상이 없어요.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
