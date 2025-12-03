@@ -309,7 +309,14 @@
         
         // 2. 값 복사
         // 템플릿 변수를 JS 문자열로 바로 넣는 방식 사용
-        shareImg.src = "{{ winner.wc_music.music_thumbnail.url }}"; 
+        {% if winner.wc_music.music_thumbnail %}
+            shareImg.src = "{{ winner.wc_music.music_thumbnail.url }}";
+            shareImg.style.display = "block"; // 이미지 보이기
+        {% else %}
+            shareImg.src = ""; // 소스 비우기
+            shareImg.style.display = "none"; // 이미지가 없으면 숨기거나 기본 이미지로 대체
+            // 또는 shareImg.src = "/static/images/default.png"; 처럼 기본 이미지 설정
+        {% endif %}
         shareTitle.innerText = "{{ winner.wc_music.music_title }}";
         shareSinger.innerText = "{{ winner.wc_music.music_singer }}";
 
