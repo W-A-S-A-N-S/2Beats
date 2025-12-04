@@ -11,30 +11,44 @@ from django.urls import reverse
 
 # === Music CRUD ===
 
-# @login_required
+@login_required
 def music_list(request):
-    musics = Music.objects.all().select_related('uploader').prefetch_related('tags')
+    sort = request.GET.get('sort', 'latest')  # latest / views / likes
+
+    musics = (
+        Music.objects
+        .filter(uploader=request.user)   # ✔ 내 음악만
+        .select_related('uploader')
+        .prefetch_related('tags')
+    )
+
+    if sort == 'views':
+        musics = musics.order_by('-music_count')
+    elif sort == 'likes':
+        musics = musics.order_by('-music_like_count')
+    else:
+        musics = musics.order_by('-music_created_at')
+
     return render(request, 'twobeats_upload/music_list.html', {
         'musics': musics,
+        'sort': sort,
     })
 
 
-# @login_required
+
+@login_required
 def music_detail(request, pk):
     music = get_object_or_404(Music, pk=pk)
 
-    # 그냥 들어올 때마다 조회수 +1
-    Music.objects.filter(pk=music.pk).update(
-        music_count=F('music_count') + 1
-    )
-    music.refresh_from_db(fields=['music_count'])
+    if request.user != music.uploader:
+        return redirect('twobeats_upload:music_list')
 
     return render(request, 'twobeats_upload/music_detail.html', {
         'music': music,
     })
 
 
-# @login_required
+@login_required
 def music_create(request):
     if request.method == 'POST':
         form = MusicForm(request.POST, request.FILES)
@@ -51,7 +65,7 @@ def music_create(request):
     })
 
 
-# @login_required
+@login_required
 def music_update(request, pk):
     music = get_object_or_404(Music, pk=pk, uploader=request.user)
     if request.method == 'POST':
@@ -67,9 +81,9 @@ def music_update(request, pk):
     })
 
 
-# @login_required
+@login_required
 def music_delete(request, pk):
-    music = get_object_or_404(Music, pk=pk)
+    music = get_object_or_404(Music, pk=pk, uploader=request.user)
 
     # 바로 삭제
     music.delete()
@@ -77,22 +91,37 @@ def music_delete(request, pk):
     return redirect('twobeats_upload:music_list')
 
 # === Video CRUD 추가 ===
-# @login_required
+@login_required
 def video_list(request):
-    videos = Video.objects.all().select_related('video_user').prefetch_related('tags')
+    sort = request.GET.get('sort', 'latest')  # latest / views / likes
+
+    videos = (
+        Video.objects
+        .filter(video_user=request.user)  # ✔ 내 영상만
+        .select_related('video_user')
+        .prefetch_related('tags')
+    )
+
+    if sort == 'views':
+        videos = videos.order_by('-video_views', '-video_created_at')
+    elif sort == 'likes':
+        videos = videos.order_by('-video_like_count', '-video_created_at')
+    else:
+        videos = videos.order_by('-video_created_at')
+
     return render(request, 'twobeats_upload/video_list.html', {
         'videos': videos,
+        'sort': sort,
     })
 
-# @login_required
+
+@login_required
 def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
-
-    # no_count=1 이 아니면 조회수 +1
-    if request.GET.get('no_count') != '1':
-        Video.objects.filter(pk=video.pk).update(video_views=F('video_views') + 1)
-        video.refresh_from_db(fields=['video_views'])
-
+    
+    if request.user != video.video_user:
+        return redirect('twobeats_upload:video_list')
+    
     # 🔥 현재 유저가 이 영상에 좋아요 눌렀는지 여부
     is_liked = False
     if request.user.is_authenticated:
@@ -103,7 +132,7 @@ def video_detail(request, pk):
         'is_liked': is_liked,
     })
 
-# @login_required
+@login_required
 def video_create(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
@@ -119,9 +148,9 @@ def video_create(request):
         'form': form,
     })
 
-# @login_required
+@login_required
 def video_update(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video, pk=pk, video_user=request.user)
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES, instance=video)
         if form.is_valid():
@@ -134,9 +163,9 @@ def video_update(request, pk):
         'video': video,
     })
 
-# @login_required
+@login_required
 def video_delete(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video, pk=pk, video_user=request.user)
     video.delete()
     return redirect('twobeats_upload:video_list')
 
@@ -195,7 +224,7 @@ def music_upload_start(request):
         'form': form,
     })
 
-# @login_required
+@login_required
 def video_upload_start(request):
     if request.method == 'POST':
         form = VideoFileForm(request.POST, request.FILES)
@@ -220,41 +249,3 @@ def video_upload_start(request):
     return render(request, 'twobeats_upload/video_upload_start.html', {
         'form': form,
     })
-
-# apps/twobeats_upload/views.py
-
-# @login_required
-def music_list(request):
-    sort = request.GET.get('sort', 'latest')  # latest / views / likes
-
-    musics = Music.objects.all().select_related('uploader').prefetch_related('tags')
-
-    if sort == 'views':
-        musics = musics.order_by('-music_count')
-    elif sort == 'likes':
-        musics = musics.order_by('-music_like_count')
-    else:  # latest
-        musics = musics.order_by('-music_created_at')
-
-    return render(request, 'twobeats_upload/music_list.html', {
-        'musics': musics,
-        'sort': sort,
-    })
- 
-def video_list(request):
-    sort = request.GET.get('sort', 'latest')  # latest / views
-
-    videos = Video.objects.all().select_related('video_user').prefetch_related('tags')
-
-    if sort == 'views':
-        videos = videos.order_by('-video_views', '-video_created_at')
-    elif sort == 'likes':
-        videos = videos.order_by('-video_like_count', '-video_created_at')
-    else:  # latest
-        videos = videos.order_by('-video_created_at')
-
-    return render(request, 'twobeats_upload/video_list.html', {
-        'videos': videos,
-        'sort': sort,
-    })
-
