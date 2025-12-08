@@ -1,122 +1,28 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>플레이리스트 관리 | 2beats</title>
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: linear-gradient(150deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08), var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      padding: 24px;
-      position: relative;
-    }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      backdrop-filter: blur(12px);
-      background: rgba(12, 20, 36, 0.85);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 10;
-    }
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .nav-actions a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-    }
-    .container { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
-    }
-    h1 { margin: 0 0 8px; letter-spacing: -0.01em; }
-    h3 { margin: 0 0 8px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; }
-    input[type="number"] {
-      width: 80px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #0c1424;
-      color: var(--text);
-    }
-    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #0c1424;
-      color: var(--text);
-      font-size: 14px;
-    }
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: 11px 14px;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      color: #0b1220;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 12px 30px rgba(34,211,238,0.25);
-    }
-    .actions { display: flex; gap: 8px; align-items: center; }
-    .top-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .link { color: var(--accent); text-decoration: none; font-size: 13px; }
-  </style>
-</head>
-<body>
-  {% include 'shared/navbar.html' %}
+{% extends "base.html" %}
+{% block title %}플레이리스트 | 2beats{% endblock %}
+{% block content %}
+  <div style="margin-bottom:10px;">
+    <a class="muted" href="{% url 'mylist' %}">← 마이 리스트로</a>
+  </div>
 
-  <div class="container">
-    <div class="top-links">
-      <a class="link" href="{% url 'mylist' %}">← 마이리스트로</a>
-      <span class="muted">/</span>
-      <span class="muted">{% if is_music %}음악{% else %}영상{% endif %}</span>
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+      <div>
+        <p class="pill-label" style="margin:0 0 8px;">{% if is_music %}음악{% else %}영상{% endif %} 플레이리스트</p>
+        <h1 style="margin:0 0 6px;">{{ playlist.folder_name }}</h1>
+        <p class="muted" style="margin:0;">생성일 {{ playlist.created_at|date:"Y-m-d H:i" }}</p>
+      </div>
     </div>
-    <div class="card">
-      <h1>{{ playlist.folder_name }}</h1>
-      <p class="muted">생성일: {{ playlist.created_at|date:"Y-m-d H:i" }}</p>
-    </div>
+  </div>
 
-    <div class="card">
-      <h3 style="margin-bottom:12px;">아이템 목록</h3>
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+      <h3 style="margin:0;">현재 목록</h3>
       {% if items %}
+        <span class="muted">순서를 수정한 뒤 저장을 눌러주세요.</span>
+      {% endif %}
+    </div>
+    {% if items %}
       <form method="post" action="">
         {% csrf_token %}
         <input type="hidden" name="action" value="reorder">
@@ -125,15 +31,13 @@
             <tr>
               <th>순서</th>
               <th>{{ is_music|yesno:"음악,영상" }} 제목</th>
-              <th>정보</th>
+              <th>아티스트</th>
             </tr>
           </thead>
           <tbody>
             {% for item in items %}
               <tr>
-                <td>
-                  <input type="number" name="order_{{ item.id }}" value="{{ item.order }}">
-                </td>
+                <td><input type="number" name="order_{{ item.id }}" value="{{ item.order }}" min="1" style="width:80px; padding:8px 10px; border-radius:10px; border:1px solid var(--border); background:#0c0a18; color:var(--text);"></td>
                 <td>
                   {% if is_music %}
                     {{ item.music.music_title }}
@@ -153,33 +57,33 @@
           </tbody>
         </table>
         <div style="margin-top:10px;">
-          <button type="submit">순서 저장</button>
+          <button type="submit" class="btn btn-primary" style="border:none;">순서 저장</button>
         </div>
       </form>
-      {% else %}
-        <p class="muted">아직 아이템이 없습니다. 아래에서 추가하세요.</p>
-      {% endif %}
-    </div>
+    {% else %}
+      <p class="muted" style="margin:0;">아직 아이템이 없습니다. 아래에서 추가해 보세요.</p>
+    {% endif %}
+  </div>
 
-    <div class="card">
-      <h3>새 아이템 추가</h3>
-      <form method="post" action="">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add">
-        <label>{{ is_music|yesno:"음악,영상" }} 선택</label>
+  <div class="card card-plain">
+    <h3 style="margin:0 0 10px;">아이템 추가</h3>
+    <form method="post" action="" style="display:grid; gap:10px;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div>
+        <label class="muted">{{ is_music|yesno:"음악,영상" }} 선택</label>
         {% if is_music %}
           {{ form.music }}
         {% else %}
           {{ form.video }}
         {% endif %}
-        <label for="{{ form.order.id_for_label }}">순서 (옵션)</label>
+      </div>
+      <div>
+        <label for="{{ form.order.id_for_label }}" class="muted">순서 (옵션)</label>
         {{ form.order }}
-        <p class="muted">비워두면 마지막 순서에 추가됩니다.</p>
-        <div style="margin-top:10px;">
-          <button type="submit">추가</button>
-        </div>
-      </form>
-    </div>
+        <p class="muted" style="margin:6px 0 0; font-size:12px;">비워두면 마지막 순서에 추가됩니다.</p>
+      </div>
+      <button type="submit" class="btn btn-secondary" style="border:none; width:140px;">추가</button>
+    </form>
   </div>
-</body>
-</html>
+{% endblock %}

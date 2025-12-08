@@ -1,100 +1,14 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>마이 히스토리 | 2beats</title>
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: linear-gradient(150deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08), var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      padding: 24px;
-      position: relative;
-    }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      backdrop-filter: blur(12px);
-      background: rgba(12, 20, 36, 0.85);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 10;
-    }
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .nav-actions a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-    }
-    .container { max-width: 1000px; margin: 0 auto; display: grid; gap: 16px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
-    }
-    h1 { margin: 0 0 8px; letter-spacing: -0.01em; }
-    h3 { margin: 0 0 10px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; }
-    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 11px 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      text-decoration: none;
-      color: #0b1220;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      box-shadow: 0 12px 30px rgba(34,211,238,0.25);
-    }
-  </style>
-</head>
-<body>
-  {% include 'shared/navbar.html' %}
+{% extends "base.html" %}
+{% block title %}마이 히스토리 | 2beats{% endblock %}
+{% block content %}
+  <div class="card" style="margin-bottom:16px;">
+    <h1 style="margin:0 0 6px;">마이 히스토리</h1>
+    <p class="muted" style="margin:0;">최근 감상한 음악과 영상을 한눈에 확인하세요.</p>
+  </div>
 
-  <div class="container">
-    <div class="header">
-      <div>
-        <h1>마이 히스토리</h1>
-        <p class="muted">최근 청취·시청 기록을 한눈에 모아 팬 경험을 이어가세요.</p>
-      </div>
-    </div>
-
+  <div class="grid grid-two">
     <div class="card">
-      <h3>음악 히스토리</h3>
+      <h3 style="margin:0 0 8px;">음악 히스토리</h3>
       {% if music_history %}
         <table>
           <thead>
@@ -115,12 +29,12 @@
           </tbody>
         </table>
       {% else %}
-        <p class="muted">아직 음악 재생 기록이 없습니다. 첫 재생을 시작해 보세요.</p>
+        <p class="muted" style="margin:0;">아직 음악 재생 기록이 없습니다. 지금 감상해보세요.</p>
       {% endif %}
     </div>
 
     <div class="card">
-      <h3>영상 히스토리</h3>
+      <h3 style="margin:0 0 8px;">영상 히스토리</h3>
       {% if video_history %}
         <table>
           <thead>
@@ -141,9 +55,8 @@
           </tbody>
         </table>
       {% else %}
-        <p class="muted">아직 영상 재생 기록이 없습니다. 새로운 영상을 플레이해 보세요.</p>
+        <p class="muted" style="margin:0;">아직 영상 재생 기록이 없습니다. 영상을 탐색해보세요.</p>
       {% endif %}
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

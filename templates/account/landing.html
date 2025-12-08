@@ -1,159 +1,284 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>2beats | 음악·영상 큐레이션 플랫폼</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 15% 20%, rgba(34,211,238,0.08), transparent 25%),
-                  radial-gradient(circle at 85% 0%, rgba(168,85,247,0.10), transparent 30%),
-                  var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      padding-top: 100px;
-      position: relative;
-    }
-    .hero {
-      width: min(1080px, 100%);
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 28px;
-      background: linear-gradient(140deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08), var(--card));
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 32px;
-      box-shadow: 0 35px 90px rgba(0,0,0,0.45);
-    }
-    .title {
-      font-size: clamp(28px, 4vw, 40px);
-      margin: 0 0 12px;
-      letter-spacing: -0.02em;
-    }
-    .subtitle {
-      margin: 0 0 24px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.6;
-    }
-    .cta {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 13px 18px;
-      border-radius: 12px;
-      font-weight: 700;
-      text-decoration: none;
-      color: #0b1220;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      box-shadow: 0 15px 40px rgba(34,211,238,0.25);
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
-    }
-    .btn:hover { transform: translateY(-1px); }
-    .btn.secondary {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-      box-shadow: none;
-    }
-    .badge {
-      display: inline-flex;
-      gap: 6px;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(34,211,238,0.12);
-      color: var(--text);
-      font-size: 13px;
-      margin-bottom: 14px;
-    }
-    .feature {
-      display: flex;
-      gap: 12px;
-      margin: 8px 0;
-      color: var(--text);
-      font-size: 14px;
-    }
-    .feature strong { color: var(--accent); font-weight: 700; }
-    .card-visual {
-      background: #0c1424;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      min-height: 220px;
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
-    .pill {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-    }
-    .pill h4 { margin: 0 0 6px; font-size: 14px; color: var(--text); }
-    .pill p { margin: 0; color: var(--muted); font-size: 13px; }
-  </style>
-</head>
-<body>
-  {% include 'shared/navbar.html' %}
+<!--
+  ========================================
+  랜딩 페이지 (Landing Page)
+  ========================================
+  - 비로그인 사용자를 위한 메인 페이지
+  - 서비스 소개 및 주요 기능 안내
+  - 회원가입/로그인으로 유도하는 CTA 버튼
+  - 통계 카드와 기능 카드로 구성
+-->
 
-  <section class="hero">
-    <div>
-      <div class="badge">2beats · All-in-One Music & Video</div>
-      <h1 class="title">창작부터 감상까지,<br>음악·영상이 만나는 원스톱 허브.</h1>
-      <p class="subtitle">
-        파일 업로드, 플레이리스트 큐레이션, 시청/청취 히스토리까지 한 번에 관리합니다.
-        간단히 가입하고 당신의 사운드 & 비디오 라이브러리를 브랜드처럼 운영하세요.
-      </p>
-      <div class="cta">
-        <a class="btn" href="{% url 'signup' %}">지금 무료로 시작하기</a>
-        <a class="btn secondary" href="{% url 'login' %}">이미 계정이 있다면 로그인</a>
-      </div>
-      <div class="feature"><strong>업로드</strong> · 음악·영상 파일과 썸네일을 안정적으로 관리</div>
-      <div class="feature"><strong>플레이리스트</strong> · 음악/영상 큐레이션을 브랜드처럼 정렬</div>
-      <div class="feature"><strong>히스토리</strong> · 최신 재생 이력으로 팬 경험 이어 듣기/보기</div>
+{% extends "base.html" %}
+{% block title %}2beats | 음악·영상 큐레이션 플랫폼{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ========================================
+     히어로 섹션 스타일
+     ======================================== */
+  .landing-hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    margin-bottom: 3rem;
+  }
+
+  /* 히어로 제목 - 그라데이션 텍스트 효과 */
+  .landing-hero h1 {
+    margin: 0 0 1rem;
+    /* clamp로 반응형 폰트 크기 (최소 2.5rem, 선호 6vw, 최대 4rem) */
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    letter-spacing: -0.02em;  /* 살짝 좁은 자간으로 모던한 느낌 */
+    font-weight: 700;
+
+    /* 그라데이션 텍스트 효과 - 흰색에서 보라색으로 */
+    background: linear-gradient(135deg, #ffffff 0%, #c084fc 100%);
+    -webkit-background-clip: text;  /* 텍스트 모양으로 배경 자르기 */
+    -webkit-text-fill-color: transparent;  /* 텍스트 색상 투명하게 */
+    background-clip: text;
+  }
+
+  .landing-hero p {
+    margin: 0 auto 2rem;
+    max-width: 42rem;  /* 가독성을 위해 최대 너비 제한 */
+    color: rgba(255,255,255,0.7);
+    font-size: 1.125rem;
+    line-height: 1.7;  /* 넉넉한 줄간격 */
+  }
+
+  /* CTA 버튼 컨테이너 */
+  .hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;  /* 모바일에서 줄바꿈 허용 */
+  }
+
+  /* ========================================
+     통계 카드 그리드 (Stats Grid)
+     ======================================== */
+  .stats-grid {
+    /* 반응형 그리드 - 최소 240px 너비의 카드들이 자동으로 배치됨 */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    max-width: 56rem;  /* 중앙 정렬을 위한 최대 너비 */
+    margin: 0 auto 4rem;
+  }
+
+  /* 개별 통계 카드 - 글래스모피즘 효과 */
+  .stat-card {
+    background: rgba(255,255,255,0.05);  /* 반투명 배경 */
+    backdrop-filter: blur(8px);  /* 배경 블러 효과 */
+    -webkit-backdrop-filter: blur(8px);  /* Safari 지원 */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  /* 호버 시 카드가 살짝 위로 올라오는 효과 */
+  .stat-card:hover {
+    background: rgba(255,255,255,0.08);  /* 조금 더 밝게 */
+    transform: translateY(-4px);
+  }
+
+  /* 통계 아이콘 - 원형 배경 */
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;  /* 원형 */
+  }
+
+  /* 아이콘 색상 변형 - 각 카드마다 다른 색상 */
+  .stat-icon.purple {
+    background: rgba(192,132,252,0.2);  /* 보라색 */
+  }
+  .stat-icon.blue {
+    background: rgba(96,165,250,0.2);  /* 파란색 */
+  }
+  .stat-icon.pink {
+    background: rgba(244,114,182,0.2);  /* 분홍색 */
+  }
+
+  /* 통계 숫자 - 크고 굵게 */
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 통계 레이블 */
+  .stat-label {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.875rem;
+  }
+
+  /* ========================================
+     기능 소개 섹션 (Features Section)
+     ======================================== */
+  .features-section h2 {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: white;
+  }
+
+  /* 기능 카드 그리드 - 통계 그리드와 유사하지만 최소 너비 280px */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* 개별 기능 카드 */
+  .feature-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s;
+  }
+
+  /* 호버 시 보라색 테두리와 함께 위로 살짝 이동 */
+  .feature-card:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(192,132,252,0.3);  /* 보라색 테두리 */
+    transform: translateY(-2px);
+  }
+
+  .feature-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: white;
+  }
+
+  .feature-card p {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  /* ========================================
+     모바일 반응형 스타일 (768px 이하)
+     ======================================== */
+  @media (max-width: 768px) {
+    .landing-hero h1 { font-size: 2rem; }
+    .landing-hero p { font-size: 1rem; }
+
+    /* 모바일에서는 버튼을 세로로 쌓고 전체 너비 사용 */
+    .hero-buttons {
+      flex-direction: column;
+      width: 100%;
+    }
+    .hero-buttons .btn { width: 100%; }
+
+    /* 통계 카드를 1열로 배치 */
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ========================================
+     히어로 섹션 - 메인 CTA
+     ======================================== -->
+<div class="landing-hero">
+  <h1>음악을 공유하고 발견하세요</h1>
+  <p>
+    전 세계 아티스트들과 함께하는 음악 공유 허브.
+    파일 업로드, 플레이리스트 큐레이션, 시청/청취 히스토리까지 한 번에 관리합니다.
+  </p>
+  <div class="hero-buttons">
+    <a class="btn btn-primary" href="{% url 'signup' %}">지금 무료로 시작하기</a>
+    <a class="btn btn-secondary" href="{% url 'login' %}">로그인</a>
+  </div>
+</div>
+
+<!-- ========================================
+     통계 카드 - 서비스 규모 표시
+     ======================================== -->
+<div class="stats-grid">
+  <!-- 트랙 통계 -->
+  <div class="stat-card">
+    <div class="stat-icon purple">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
     </div>
-    <div class="card-visual">
-      <div class="pill">
-        <h4>음악 업로드</h4>
-        <p>장르·태그로 아카이빙, 메타데이터 자동 관리</p>
-      </div>
-      <div class="pill">
-        <h4>영상 플레이</h4>
-        <p>MV · 라이브 · 커버를 한 화면에서</p>
-      </div>
-      <div class="pill">
-        <h4>마이페이지</h4>
-        <p>프로필·연락처·이미지까지 브랜드 프로필 완성</p>
-      </div>
-      <div class="pill">
-        <h4>히스토리</h4>
-        <p>최근 재생 로그로 맞춤 추천 시작점</p>
-      </div>
+    <div class="stat-number">10K+</div>
+    <div class="stat-label">트랙</div>
+  </div>
+
+  <!-- 리스너 통계 -->
+  <div class="stat-card">
+    <div class="stat-icon blue">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+      </svg>
     </div>
-  </section>
-</body>
-</html>
+    <div class="stat-number">50K+</div>
+    <div class="stat-label">리스너</div>
+  </div>
+
+  <!-- 아티스트 통계 -->
+  <div class="stat-card">
+    <div class="stat-icon pink">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+    </div>
+    <div class="stat-number">5K+</div>
+    <div class="stat-label">아티스트</div>
+  </div>
+</div>
+
+<!-- ========================================
+     기능 소개 그리드
+     ======================================== -->
+<div class="features-section">
+  <h2>강력한 기능들</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <h3>음악 업로드</h3>
+      <p>장르·태그로 아카이빙하고 메타데이터를 자동으로 관리합니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>영상 플레이</h3>
+      <p>MV, 라이브, 커버 영상을 한 화면에서 감상하세요.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>플레이리스트</h3>
+      <p>음악과 영상 큐레이션을 브랜드처럼 정렬하고 공유하세요.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>히스토리</h3>
+      <p>최근 재생 기록으로 맞춤 추천을 받아보세요.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>마이페이지</h3>
+      <p>프로필, 연락처, 이미지까지 브랜드 프로필을 완성하세요.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>월드컵</h3>
+      <p>좋아하는 음악끼리 대결시키며 취향을 발견하세요.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

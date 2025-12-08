@@ -1,0 +1,339 @@
+<!--
+  ========================================
+  음악 업로드 페이지 (Music Upload)
+  ========================================
+  - 음악 파일 업로드를 위한 드래그 앤 드롭 인터페이스
+  - 클릭하여 파일 선택 또는 드래그로 업로드 가능
+  - 업로드 가이드 정보 제공
+  - 파일 선택 시 자동으로 폼 제출
+-->
+
+{% extends "base.html" %}
+{% block title %}음악 업로드 | 2beats{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ========================================
+     업로드 컨테이너
+     ======================================== */
+  .upload-container {
+    max-width: 56rem;  /* 최대 너비 제한 */
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  /* ========================================
+     페이지 헤더
+     ======================================== */
+  .upload-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  /* 헤더 제목 - 그라데이션 텍스트 */
+  .upload-header h1 {
+    margin: 0 0 0.75rem;
+    font-size: 2.5rem;
+    font-weight: 700;
+    /* 흰색에서 보라색으로 그라데이션 */
+    background: linear-gradient(135deg, #ffffff 0%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .upload-header p {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+  }
+
+  /* ========================================
+     드롭존 (Drag & Drop Zone)
+     ======================================== */
+  .upload-dropzone {
+    background: rgba(255,255,255,0.03);
+    border: 2px dashed rgba(192,132,252,0.3);  /* 점선 테두리 */
+    border-radius: 1.25rem;
+    padding: 4rem 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;  /* 클릭 가능 표시 */
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 호버 시 드롭존 효과 */
+  .upload-dropzone:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(192,132,252,0.5);  /* 테두리 더 선명하게 */
+    transform: translateY(-2px);  /* 살짝 위로 */
+  }
+
+  /* 드롭존 배경 원형 그라데이션 효과 */
+  .upload-dropzone::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    /* 중앙의 빛나는 원형 효과 */
+    background: radial-gradient(circle, rgba(192,132,252,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;  /* 클릭 이벤트 무시 */
+  }
+
+  /* ========================================
+     업로드 아이콘
+     ======================================== */
+  .upload-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;  /* 원형 */
+    background: rgba(192,132,252,0.15);  /* 보라색 반투명 배경 */
+    position: relative;
+    z-index: 1;  /* 배경 효과 위에 표시 */
+  }
+
+  /* 메인 텍스트 */
+  .upload-text-main {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ========================================
+     업로드 버튼
+     ======================================== */
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 2rem;
+    /* 보라색 그라데이션 배경 */
+    background: linear-gradient(120deg, #c084fc, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 2rem;  /* 완전히 둥근 버튼 */
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 1rem 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 버튼 호버 효과 */
+  .upload-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124,58,237,0.4);  /* 보라색 그림자 */
+  }
+
+  /* 보조 텍스트 */
+  .upload-text-sub {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ========================================
+     업로드 가이드 정보
+     ======================================== */
+  .upload-info {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+  }
+
+  .upload-info h3 {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;  /* 아이콘과 텍스트 간격 */
+  }
+
+  /* 가이드 리스트 */
+  .upload-info ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.8;  /* 넉넉한 줄간격 */
+  }
+
+  /* ========================================
+     폼 에러 메시지
+     ======================================== */
+  .form-errors {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(248,113,113,0.1);  /* 빨간색 반투명 배경 */
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 0.75rem;
+    color: #fecaca;
+  }
+
+  /* ========================================
+     모바일 반응형 스타일
+     ======================================== */
+  @media (max-width: 768px) {
+    .upload-header h1 { font-size: 2rem; }
+    .upload-dropzone { padding: 3rem 1.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+  <!-- ========================================
+       페이지 헤더
+       ======================================== -->
+  <div class="upload-header">
+    <h1>음악 파일 업로드</h1>
+    <p>고품질 오디오 파일을 업로드하고 전 세계와 공유하세요</p>
+  </div>
+
+  <!-- 폼 에러 표시 -->
+  {% if form.music_root.errors %}
+    <div class="form-errors">
+      {{ form.music_root.errors }}
+    </div>
+  {% endif %}
+
+  <!-- ========================================
+       업로드 폼
+       ======================================== -->
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+    {% csrf_token %}
+
+    <!-- 드래그 앤 드롭 영역 -->
+    <div class="upload-dropzone" onclick="document.getElementById('id_music_root').click()">
+      <!-- 음악 아이콘 -->
+      <div class="upload-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <path d="M9 18V5l12-2v13"></path>
+          <circle cx="6" cy="18" r="3"></circle>
+          <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+      </div>
+
+      <div class="upload-text-main">
+        오디오 파일을 드래그하여 업로드
+      </div>
+
+      <!-- 파일 선택 버튼 -->
+      <button type="button" class="upload-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        파일 선택
+      </button>
+
+      <div class="upload-text-sub">
+        또는 클릭하여 기기에서 선택하세요
+      </div>
+    </div>
+
+    <!-- 실제 파일 입력 필드 (숨김 처리) -->
+    {{ form.music_root }}
+  </form>
+
+  <!-- ========================================
+       업로드 가이드 정보
+       ======================================== -->
+  <div class="upload-info">
+    <h3>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      업로드 가이드
+    </h3>
+    <ul>
+      <li>최고의 품질을 위해 WAV, FLAC, AIFF 또는 ALAC 형식을 사용하세요</li>
+      <li>MP3 파일도 지원됩니다 (최소 192kbps 권장)</li>
+      <li>파일 크기 제한: 최대 100MB</li>
+      <li>업로드 후 제목, 아티스트, 장르 등의 정보를 입력할 수 있습니다</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========================================
+     JavaScript - 드래그 앤 드롭 및 파일 선택 처리
+     ======================================== -->
+<script>
+  const fileInput = document.getElementById('id_music_root');
+  if (fileInput) {
+    // 파일 입력 필드 숨김 처리
+    fileInput.style.display = 'none';
+
+    // 파일 선택 시 자동 제출
+    fileInput.addEventListener('change', function () {
+      if (this.files.length > 0) {
+        this.form.submit();
+      }
+    });
+
+    // 드래그 앤 드롭 기능 구현
+    const dropzone = document.querySelector('.upload-dropzone');
+
+    // 모든 드래그 이벤트에서 기본 동작 방지
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // 드래그 진입/오버 시 시각적 피드백
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, () => {
+        dropzone.style.background = 'rgba(255,255,255,0.08)';
+        dropzone.style.borderColor = '#c084fc';  // 보라색으로 변경
+      }, false);
+    });
+
+    // 드래그 떠남/드롭 시 원래 스타일로 복귀
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, () => {
+        dropzone.style.background = 'rgba(255,255,255,0.03)';
+        dropzone.style.borderColor = 'rgba(192,132,252,0.3)';
+      }, false);
+    });
+
+    // 파일 드롭 처리
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+
+      if (files.length > 0) {
+        // 파일 입력 필드에 드롭된 파일 설정
+        fileInput.files = files;
+        // 폼 자동 제출
+        document.getElementById('upload-form').submit();
+      }
+    }, false);
+  }
+</script>
+{% endblock %}

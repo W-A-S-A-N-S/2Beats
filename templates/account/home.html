@@ -1,167 +1,336 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>홈 | 2beats</title>
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: linear-gradient(145deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08), var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      position: relative;
-    }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      backdrop-filter: blur(12px);
-      background: rgba(12, 20, 36, 0.85);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 10;
-    }
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .nav-actions a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-    }
-    .wrap {
-      width: min(960px, 100%);
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    }
-    .card h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: -0.01em; }
-    .card p { margin: 0 0 12px; color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 11px 14px;
-      border-radius: 12px;
-      font-weight: 700;
-      text-decoration: none;
-      color: #0b1220;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      box-shadow: 0 12px 30px rgba(34,211,238,0.25);
-    }
-    .btn.secondary {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-      box-shadow: none;
-    }
-    .header {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .hello { font-size: 20px; margin: 0; }
-    .links { display: flex; gap: 10px; flex-wrap: wrap; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(34,211,238,0.12);
-      color: var(--text);
-      font-size: 12px;
-    }
-  </style>
-</head>
-<body>
-  {% include 'shared/navbar.html' %}
+<!--
+  ========================================
+  홈 페이지 (Home / Dashboard)
+  ========================================
+  - 로그인한 사용자를 위한 대시보드
+  - 주요 액션 카드로 빠른 작업 수행
+  - 업로드, 관리, 플레이리스트, 히스토리 등 핵심 기능 접근
+  - 하단에 빠른 메뉴 링크 제공
+-->
 
-  <div class="wrap">
-    <div class="header">
-      <div>
-        <p class="pill">로그인 완료</p>
-        <h1 class="hello">안녕하세요, {{ request.user.username }}님</h1>
-        <p style="margin:6px 0 0; color: var(--muted); font-size:14px;">음악과 영상을 관리하고, 프로필을 업데이트하세요.</p>
-      </div>
-      <div class="links">
-        <a class="btn secondary" href="{% url 'profile' %}">마이페이지</a>
-        <a class="btn secondary" href="{% url 'logout' %}">로그아웃</a>
-      </div>
+{% extends "base.html" %}
+{% block title %}홈 | 2beats{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ========================================
+     페이지 헤더 영역
+     ======================================== */
+  .home-header {
+    text-align: center;
+    padding: 2rem 0 3rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);  /* 미세한 구분선 */
+    margin-bottom: 3rem;
+  }
+
+  /* 헤더 제목 - 그라데이션 텍스트 */
+  .home-header h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2.5rem;
+    font-weight: 700;
+    /* 흰색에서 보라색으로 그라데이션 */
+    background: linear-gradient(135deg, #ffffff 0%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .home-header p {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 1.125rem;
+  }
+
+  /* ========================================
+     액션 카드 그리드 - 주요 기능 카드들
+     ======================================== */
+  .action-cards {
+    /* 반응형 그리드 - 최소 300px 카드가 자동 배치 */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  /* 개별 액션 카드 - 글래스모피즘 효과 */
+  .action-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;  /* ::before 요소가 카드 밖으로 나가지 않도록 */
+  }
+
+  /* 카드 상단 그라데이션 바 - 호버 시 나타남 */
+  .action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;  /* 얇은 상단 바 */
+    background: linear-gradient(90deg, #c084fc, #7c3aed);  /* 보라색 그라데이션 */
+    opacity: 0;  /* 기본적으로 숨김 */
+    transition: opacity 0.3s;
+  }
+
+  /* 호버 시 카드 효과 */
+  .action-card:hover {
+    background: rgba(255,255,255,0.08);  /* 배경 밝아짐 */
+    border-color: rgba(192,132,252,0.3);  /* 보라색 테두리 */
+    transform: translateY(-4px);  /* 살짝 위로 올라감 */
+  }
+
+  /* 호버 시 상단 바 표시 */
+  .action-card:hover::before {
+    opacity: 1;
+  }
+
+  /* 액션 카드 아이콘 - 둥근 배경의 아이콘 */
+  .action-card-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;  /* 둥근 모서리 */
+    background: rgba(192,132,252,0.15);  /* 보라색 반투명 배경 */
+  }
+
+  .action-card h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+    color: white;
+  }
+
+  .action-card p {
+    margin: 0 0 1.5rem;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  /* 카드 내부 버튼들 컨테이너 */
+  .action-card-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;  /* 버튼이 많으면 줄바꿈 */
+  }
+
+  /* ========================================
+     빠른 링크 섹션
+     ======================================== */
+  .quick-links {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    padding: 2rem;
+  }
+
+  .quick-links h3 {
+    margin: 0 0 1.5rem;
+    font-size: 1.25rem;
+    color: white;
+  }
+
+  /* 빠른 링크 그리드 */
+  .quick-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  /* 개별 빠른 링크 아이템 */
+  .quick-link-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0.75rem;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  /* 빠른 링크 호버 효과 */
+  .quick-link-item:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(192,132,252,0.3);  /* 보라색 테두리 */
+    color: white;
+  }
+
+  /* 빠른 링크 아이콘 */
+  .quick-link-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(192,132,252,0.15);
+    flex-shrink: 0;  /* 아이콘 크기 고정 */
+  }
+
+  /* ========================================
+     모바일 반응형 스타일 (768px 이하)
+     ======================================== */
+  @media (max-width: 768px) {
+    .home-header h1 { font-size: 2rem; }
+
+    /* 모바일에서는 액션 카드 1열로 배치 */
+    .action-cards { grid-template-columns: 1fr; }
+
+    /* 빠른 링크도 1열로 */
+    .quick-links-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ========================================
+     페이지 헤더 - 사용자 환영 메시지
+     ======================================== -->
+<div class="home-header">
+  <h1>환영합니다, {{ request.user.username }}님</h1>
+  <p>음악·영상을 관리하고 최신 활동을 확인하세요</p>
+</div>
+
+<!-- ========================================
+     액션 카드 그리드 - 주요 작업들
+     ======================================== -->
+<div class="action-cards">
+  <!-- 업로드 카드 -->
+  <div class="action-card">
+    <div class="action-card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
     </div>
-
-    <div class="card">
-      <h2>업로드</h2>
-      <p>음악/영상 파일을 올리고 태그·썸네일로 브랜드 자산처럼 정리하세요.</p>
-      <div class="actions">
-        <a class="btn" href="{% url 'twobeats_upload:music_upload_start' %}">음악 업로드</a>
-        <a class="btn secondary" href="{% url 'twobeats_upload:video_upload_start' %}">영상 업로드</a>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>내 업로드 관리</h2>
-      <p>업로드한 음악과 영상 파일을 확인하고 수정·삭제할 수 있습니다.</p>
-      <div class="actions">
-        <a class="btn" href="{% url 'twobeats_upload:music_list' %}">업로드한 음악</a>
-        <a class="btn secondary" href="{% url 'twobeats_upload:video_list' %}">업로드한 영상</a>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>플레이리스트</h2>
-      <p>음악과 영상을 탭으로 나눠 큐레이션하고, 원하는 순서로 재생 경험을 설계하세요.</p>
-      <div class="actions">
-        <a class="btn" href="{% url 'mylist' %}">플레이리스트 관리</a>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>히스토리</h2>
-      <p>최근 재생 로그를 확인하고 팬 경험을 이어 듣기/보기로 연결하세요.</p>
-      <div class="actions">
-        <a class="btn secondary" href="{% url 'history' %}">히스토리 보기</a>
-      </div>
+    <h2>업로드</h2>
+    <p>음악과 영상을 업로드하고 브랜드와 팬을 연결하세요.</p>
+    <div class="action-card-buttons">
+      <a class="btn btn-primary" href="{% url 'twobeats_upload:music_upload_start' %}">음악 업로드</a>
+      <a class="btn btn-secondary" href="{% url 'twobeats_upload:video_upload_start' %}">영상 업로드</a>
     </div>
   </div>
-</body>
-</html>
+
+  <!-- 업로드 관리 카드 -->
+  <div class="action-card">
+    <div class="action-card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </div>
+    <h2>내 업로드 관리</h2>
+    <p>올린 음악과 영상을 최신 정보로 유지하세요.</p>
+    <div class="action-card-buttons">
+      <a class="btn btn-primary" href="{% url 'twobeats_upload:music_list' %}">업로드한 음악</a>
+      <a class="btn btn-secondary" href="{% url 'twobeats_upload:video_list' %}">업로드한 영상</a>
+    </div>
+  </div>
+
+  <!-- 플레이리스트 카드 -->
+  <div class="action-card">
+    <div class="action-card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
+    </div>
+    <h2>플레이리스트</h2>
+    <p>듣고 싶은 음악, 보고 싶은 영상을 컬렉션으로 정리하세요.</p>
+    <div class="action-card-buttons">
+      <a class="btn btn-primary" href="{% url 'mylist' %}">플레이리스트 관리</a>
+    </div>
+  </div>
+
+  <!-- 히스토리 카드 -->
+  <div class="action-card">
+    <div class="action-card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </div>
+    <h2>히스토리</h2>
+    <p>최근 재생 기록을 다시 확인하고 이어서 감상하세요.</p>
+    <div class="action-card-buttons">
+      <a class="btn btn-secondary" href="{% url 'history' %}">히스토리 보기</a>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================
+     빠른 메뉴 링크 섹션
+     ======================================== -->
+<div class="quick-links">
+  <h3>빠른 메뉴</h3>
+  <div class="quick-links-grid">
+    <!-- 음악 검색 -->
+    <a href="{% url 'music_explore:search' %}" class="quick-link-item">
+      <div class="quick-link-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+      </div>
+      <span>음악 검색</span>
+    </a>
+
+    <!-- 음악 차트 -->
+    <a href="{% url 'music_explore:chart_all' %}" class="quick-link-item">
+      <div class="quick-link-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+          <polyline points="17 6 23 6 23 12"></polyline>
+        </svg>
+      </div>
+      <span>음악 차트</span>
+    </a>
+
+    <!-- 영상 보기 -->
+    <a href="{% url 'video_explore:video_list' %}" class="quick-link-item">
+      <div class="quick-link-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <polygon points="23 7 16 12 23 17 23 7"></polygon>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+        </svg>
+      </div>
+      <span>영상 보기</span>
+    </a>
+
+    <!-- 월드컵 -->
+    <a href="{% url 'twobeats_worldcup:play' %}" class="quick-link-item">
+      <div class="quick-link-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+          <path d="M2 12h20"></path>
+        </svg>
+      </div>
+      <span>월드컵</span>
+    </a>
+
+    <!-- 마이페이지 -->
+    <a href="{% url 'profile' %}" class="quick-link-item">
+      <div class="quick-link-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+      <span>마이페이지</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

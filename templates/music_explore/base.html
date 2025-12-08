@@ -386,11 +386,74 @@
         .player-text-link:hover h4 {
             color: #1db954;
         }
+        /* ---- 2beats dark theme override ---- */
+        :root {
+            --bg: #090712;
+            --card: #120f1f;
+            --accent: #c084fc;
+            --accent-2: #7c3aed;
+            --text: #f7f8ff;
+            --muted: #c7c9d9;
+            --border: #1f1b2d;
+        }
+        body {
+            background: radial-gradient(circle at 15% 20%, rgba(124,58,237,0.16), transparent 40%),
+                        radial-gradient(circle at 80% 0%, rgba(192,132,252,0.12), transparent 45%),
+                        linear-gradient(160deg, #090712, #0e0a19 60%, #0a0814);
+            color: var(--text);
+        }
+        .card {
+            background: linear-gradient(140deg, rgba(124,58,237,0.12), rgba(192,132,252,0.12), var(--card));
+            border: 1px solid var(--border);
+            box-shadow: 0 22px 70px rgba(0,0,0,0.45);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #0b1220;
+            box-shadow: 0 6px 14px rgba(124,58,237,0.4);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); }
+        .search-box {
+            background: #0c0a18;
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .search-box:focus {
+            border-color: var(--accent);
+            background-color: #0e0c1c;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+        }
+        table { color: var(--text); }
+        th, td { border-color: var(--border); }
+        .card h1, .card h2, .card h3, h1, h2, h3, h4 { color: var(--text); }
+        p, span, label { color: var(--muted); }
+        input, select, textarea {
+            background: #0c0a18;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+        }
+        #bottom-player {
+            background: var(--card);
+            color: var(--text);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% include 'shared/navbar.html' %}
     <!-- 로딩 오버레이 -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="spinner"></div>

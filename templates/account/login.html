@@ -1,162 +1,220 @@
-﻿<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>로그인 | 2beats</title>
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --danger: #f87171;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(34,211,238,0.08), transparent 25%),
-                  radial-gradient(circle at 80% 0%, rgba(168,85,247,0.09), transparent 30%),
-                  var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      position: relative;
-    }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      backdrop-filter: blur(12px);
-      background: rgba(12, 20, 36, 0.85);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 10;
-    }
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .nav-actions a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-    }
-    .card {
-      width: min(420px, 100%);
-      background: linear-gradient(145deg, var(--card), #0b1220);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
-      position: relative;
-      overflow: hidden;
-      margin-top: 48px;
-    }
-    .card::before, .card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 18px;
-      pointer-events: none;
-    }
-    .card::before {
-      background: linear-gradient(120deg, rgba(34,211,238,0.1), rgba(168,85,247,0.1));
-      filter: blur(12px);
-      opacity: 0.8;
-    }
-    .card::after {
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 24px;
-      letter-spacing: -0.01em;
-    }
-    p.desc {
-      margin: 0 0 20px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    input {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #0c1424;
-      color: var(--text);
-      font-size: 15px;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(34,211,238,0.15);
-    }
-    .field { margin-bottom: 16px; }
-    .actions {
-      margin-top: 8px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      color: #0b1220;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      font-size: 15px;
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
-      box-shadow: 0 12px 30px rgba(34,211,238,0.25);
-    }
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); box-shadow: 0 8px 20px rgba(34,211,238,0.18); }
-    .messages { margin-bottom: 14px; }
-    .msg {
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-size: 13px;
-      border: 1px solid var(--border);
-    }
-    .msg.error { background: rgba(248,113,113,0.08); color: #fecaca; border-color: rgba(248,113,113,0.4); }
-    .msg.info { background: rgba(34,211,238,0.08); color: #a5f3fc; border-color: rgba(34,211,238,0.4); }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="{% url 'landing' %}">2beats</a>
-  </header>
-  <div class="card">
-    <h1>로그인</h1>
-    <p class="desc">2beats 크리에이터 허브로 이어서 진행하세요.</p>
+<!--
+  ========================================
+  로그인 페이지 (Login Page)
+  ========================================
+  - 사용자 인증을 위한 로그인 폼
+  - 중앙 정렬된 인증 카드 레이아웃
+  - 글래스모피즘 효과로 모던한 느낌
+  - 회원가입 페이지로 이동 링크 포함
+-->
 
+{% extends "base.html" %}
+{% block title %}로그인 | 2beats{% endblock %}
+{% block extra_head %}
+<style>
+  /* ========================================
+     인증 컨테이너 - 전체 화면 중앙 정렬
+     ======================================== */
+  .auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;  /* 최소 높이 60% 뷰포트 */
+    padding: 2rem 1rem;
+  }
+
+  /* ========================================
+     인증 카드 - 글래스모피즘 효과
+     ======================================== */
+  .auth-card {
+    width: min(460px, 100%);  /* 최대 460px, 모바일에서는 100% */
+    /* 반투명 배경 + 블러 효과로 글래스모피즘 구현 */
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);  /* Safari 지원 */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.25rem;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);  /* 깊이감 있는 그림자 */
+  }
+
+  /* ========================================
+     인증 헤더 - 로고와 제목
+     ======================================== */
+  .auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  /* 2B 로고 박스 - 보라색 그라데이션 */
+  .auth-logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    /* 보라색 그라데이션 배경 */
+    background: linear-gradient(135deg, #c084fc 0%, #7c3aed 100%);
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    /* 그림자 효과로 입체감 추가 */
+    box-shadow: 0 8px 24px rgba(124,58,237,0.4);
+  }
+
+  .auth-card h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.75rem;
+    letter-spacing: -0.02em;
+    color: white;
+    font-weight: 700;
+  }
+
+  .auth-card p.desc {
+    margin: 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* ========================================
+     폼 스타일
+     ======================================== */
+  .auth-form {
+    margin-top: 2rem;
+  }
+
+  /* 개별 입력 필드 컨테이너 */
+  .field {
+    margin-bottom: 1.25rem;
+  }
+
+  /* 필드 레이블 */
+  .field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: rgba(255,255,255,0.9);
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  /* 입력 필드 - 반투명 배경 */
+  .field input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+
+  /* 입력 필드 포커스 효과 */
+  .field input:focus {
+    outline: none;
+    border-color: #c084fc;  /* 보라색 테두리 */
+    background: rgba(255,255,255,0.08);  /* 살짝 밝아짐 */
+    /* 보라색 외곽 글로우 효과 */
+    box-shadow: 0 0 0 3px rgba(192,132,252,0.15);
+  }
+
+  .field input::placeholder {
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* ========================================
+     메시지 표시 (Django messages)
+     ======================================== */
+  .messages {
+    margin-bottom: 1.25rem;
+  }
+
+  .msg {
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid;
+  }
+
+  /* 에러 메시지 - 빨간색 계열 */
+  .msg.error {
+    background: rgba(248,113,113,0.1);
+    color: #fecaca;
+    border-color: rgba(248,113,113,0.3);
+  }
+
+  /* 정보 메시지 - 보라색 계열 */
+  .msg.info {
+    background: rgba(192,132,252,0.1);
+    color: #e9d5ff;
+    border-color: rgba(192,132,252,0.3);
+  }
+
+  /* 액션 버튼 컨테이너 */
+  .auth-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* ========================================
+     푸터 - 회원가입 링크
+     ======================================== */
+  .auth-footer {
+    margin-top: 2rem;
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .auth-footer p {
+    margin: 0;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.875rem;
+  }
+
+  .auth-footer a {
+    color: #c084fc;  /* 보라색 링크 */
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .auth-footer a:hover {
+    color: #d8b4fe;  /* 호버 시 더 밝은 보라색 */
+  }
+
+  /* ========================================
+     모바일 반응형 스타일 (768px 이하)
+     ======================================== */
+  @media (max-width: 768px) {
+    .auth-card {
+      padding: 2rem 1.5rem;  /* 모바일에서 padding 줄임 */
+    }
+    .auth-card h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <!-- ========================================
+         헤더 - 로고와 제목
+         ======================================== -->
+    <div class="auth-header">
+      <div class="auth-logo">2B</div>
+      <h1>로그인</h1>
+      <p class="desc">2beats 크리에이터 허브로 이어서 진행하세요</p>
+    </div>
+
+    <!-- Django messages 표시 -->
     {% if messages %}
       <div class="messages">
         {% for message in messages %}
@@ -165,20 +223,36 @@
       </div>
     {% endif %}
 
-    <form method="post" action="{% url 'login' %}">
+    <!-- ========================================
+         로그인 폼
+         ======================================== -->
+    <form method="post" action="{% url 'login' %}" class="auth-form">
       {% csrf_token %}
+
+      <!-- 아이디 입력 -->
       <div class="field">
         <label for="id_username">아이디</label>
-        <input type="text" name="username" autofocus required id="id_username" placeholder="username">
+        <input type="text" name="username" autofocus required id="id_username" placeholder="아이디를 입력하세요">
       </div>
+
+      <!-- 비밀번호 입력 -->
       <div class="field">
         <label for="id_password">비밀번호</label>
-        <input type="password" name="password" required id="id_password" placeholder="password">
+        <input type="password" name="password" required id="id_password" placeholder="비밀번호를 입력하세요">
       </div>
-      <div class="actions">
-        <button type="submit">로그인</button>
+
+      <!-- 로그인 버튼 -->
+      <div class="auth-actions">
+        <button class="btn btn-primary" type="submit">로그인</button>
       </div>
     </form>
+
+    <!-- ========================================
+         푸터 - 회원가입 링크
+         ======================================== -->
+    <div class="auth-footer">
+      <p>아직 계정이 없으신가요? <a href="{% url 'signup' %}">회원가입</a></p>
+    </div>
   </div>
-</body>
-</html>
+</div>
+{% endblock %}

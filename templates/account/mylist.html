@@ -1,172 +1,43 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>마이 리스트 | 2beats</title>
-  <style>
-    :root {
-      --bg: #0a0f1a;
-      --card: #0c1424;
-      --accent: #22d3ee;
-      --accent-2: #a855f7;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-      --border: #1e293b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-      background: linear-gradient(160deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08), var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      padding: 28px;
-      position: relative;
-    }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      backdrop-filter: blur(12px);
-      background: rgba(12, 20, 36, 0.85);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 10;
-    }
-    .brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-    .nav-actions a {
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-    }
-    .container { max-width: 960px; margin: 0 auto; margin-top: 64px; }
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-    h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
-    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .tab {
-      padding: 10px 16px;
-      cursor: pointer;
-      text-decoration: none;
-      color: var(--muted);
-      background: rgba(255,255,255,0.02);
-      border-right: 1px solid var(--border);
-    }
-    .tab:last-child { border-right: none; }
-    .tab.active { color: var(--text); background: rgba(34,211,238,0.12); font-weight: 700; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .card h3 { margin: 0; font-size: 17px; }
-    .card p { margin: 0; color: var(--muted); font-size: 13px; }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(34,211,238,0.12);
-      color: var(--text);
-      font-size: 12px;
-      width: fit-content;
-    }
-    .form-card {
-      background: linear-gradient(140deg, rgba(34,211,238,0.1), rgba(168,85,247,0.1), var(--card));
-    }
-    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #0c1424;
-      color: var(--text);
-      font-size: 14px;
-    }
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: 11px 14px;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      color: #0b1220;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 8px;
-      box-shadow: 0 12px 30px rgba(34,211,238,0.25);
-    }
-    .muted { color: var(--muted); font-size: 13px; }
-  </style>
-</head>
-<body>
-  {% include 'shared/navbar.html' %}
-
-  <div class="container">
-    <div class="header">
-      <h1>마이 리스트</h1>
-      <div class="tabs">
-        <a class="tab {% if tab == 'music' %}active{% endif %}" href="?tab=music">음악</a>
-        <a class="tab {% if tab == 'video' %}active{% endif %}" href="?tab=video">영상</a>
+{% extends "base.html" %}
+{% block title %}마이 리스트 | 2beats{% endblock %}
+{% block content %}
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0 0 4px;">마이 리스트</h1>
+        <p class="muted" style="margin:0;">미래에 듣고/보고 싶은 콘텐츠를 폴더로 관리하세요.</p>
+      </div>
+      <div style="display:inline-flex; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+        <a class="btn btn-secondary" href="?tab=music" style="border-radius:0; border:none; padding:10px 16px; {% if tab == 'music' %}background:rgba(124,58,237,0.16); color:var(--text); font-weight:700;{% endif %}">음악</a>
+        <a class="btn btn-secondary" href="?tab=video" style="border-radius:0; border:none; padding:10px 16px; {% if tab == 'video' %}background:rgba(124,58,237,0.16); color:var(--text); font-weight:700;{% endif %}">영상</a>
       </div>
     </div>
-
-    <div class="grid" style="margin-bottom: 16px;">
-      {% for playlist in playlists %}
-        <div class="card">
-          <span class="badge">{% if tab == 'music' %}음악{% else %}영상{% endif %}</span>
-          <h3>{{ playlist.folder_name }}</h3>
-          <p class="muted">생성일 {{ playlist.created_at|date:"Y-m-d H:i" }}</p>
-          <div style="margin-top:8px;">
-            <a class="link" href="{% url 'playlist_detail' playlist.id %}?kind={{ tab }}" style="color:var(--accent); text-decoration:none;">관리하기</a>
-          </div>
-        </div>
-      {% empty %}
-        <p class="muted">아직 {% if tab == 'music' %}음악{% else %}영상{% endif %} 플레이리스트가 없습니다. 새로 만들어보세요.</p>
-      {% endfor %}
-    </div>
-
-    <div class="card form-card">
-      <h3 style="margin:0 0 8px;">새 플레이리스트 만들기</h3>
-      <form method="post" action="?tab={{ tab }}">
-        {% csrf_token %}
-        <label for="{{ form.folder_name.id_for_label }}">이름</label>
-        {{ form.folder_name }}
-        <button type="submit">생성</button>
-      </form>
-    </div>
   </div>
-</body>
-</html>
+
+  <div class="grid grid-two" style="margin-bottom:16px;">
+    {% for playlist in playlists %}
+      <div class="card">
+        <span class="pill-label">{% if tab == 'music' %}음악{% else %}영상{% endif %}</span>
+        <h3 style="margin:10px 0 4px;">{{ playlist.folder_name }}</h3>
+        <p class="muted" style="margin:0 0 8px;">생성일 {{ playlist.created_at|date:"Y-m-d H:i" }}</p>
+        <a class="btn btn-primary" style="margin-top:6px;" href="{% url 'playlist_detail' playlist.id %}?kind={{ tab }}">자세히 보기</a>
+      </div>
+    {% empty %}
+      <div class="card" style="grid-column:1 / -1;">
+        <p class="muted" style="margin:0;">아직 {% if tab == 'music' %}음악{% else %}영상{% endif %} 플레이리스트가 없습니다. 새로 만들어 보세요.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card card-plain">
+    <h3 style="margin:0 0 8px;">새 플레이리스트 만들기</h3>
+    <form method="post" action="?tab={{ tab }}" style="display:grid; gap:10px;">
+      {% csrf_token %}
+      <div>
+        <label for="{{ form.folder_name.id_for_label }}" class="muted">폴더 이름</label>
+        {{ form.folder_name }}
+      </div>
+      <button type="submit" class="btn btn-primary" style="border:none; width:180px;">생성</button>
+    </form>
+  </div>
+{% endblock %}
