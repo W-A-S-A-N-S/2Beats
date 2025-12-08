@@ -1,27 +1,69 @@
 <!--
   ========================================
-  월드컵 게임 페이지 (World Cup Game)
+  ?�드�?게임 ?�이지 (World Cup Game)
   ========================================
-  - 음악 이상형 월드컵 게임
-  - 2개의 카드 중 선택하여 토너먼트 진행
-  - 카드 클릭 시 미리듣기 재생
-  - 최종 우승곡 선정 및 저장
+  - ?�악 ?�상???�드�?게임
+  - 2개의 카드 �??�택?�여 ?�너먼트 진행
+  - 카드 ?�릭 ??미리?�기 ?�생
+  - 최종 ?�승�??�정 �??�??
 -->
 
 {% extends "base.html" %}
-{% block title %}2Beats 이상형 월드컵{% endblock %}
+{% block title %}?�만???�드�?| 2Beats{% endblock %}
 
 {% block extra_head %}
 <style>
   /* ========================================
-     전역 설정
+     ?�역 ?�정
      ======================================== */
-  body {
-    user-select: none;  /* 텍스트 선택 방지 */
+  body { user-select: none; }
+
+  /* ?�크 ??보정 */
+  .wc-card {
+    background: linear-gradient(140deg, rgba(124,58,237,0.12), rgba(192,132,252,0.08), var(--card));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    box-shadow: 0 22px 70px rgba(0,0,0,0.55);
+    padding: 20px;
+  }
+  .wc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b1220;
+    box-shadow: 0 18px 42px rgba(124,58,237,0.32);
+  }
+  .wc-btn.secondary {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .wc-btn:hover { transform: translateY(-1px); }
+  .wc-btn:active { transform: translateY(0); opacity: 0.9; }
+  input, select {
+    background: #0c0a18;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
   }
 
   /* ========================================
-     컨테이너
+     컨테?�너
      ======================================== */
   .wc-container {
     width: 100%;
@@ -31,7 +73,7 @@
     padding: 20px;
   }
 
-  /* 페이지 제목 */
+  /* ?�이지 ?�목 */
   .wc-container h1 {
     margin-bottom: 10px;
     background: linear-gradient(135deg, #ffffff 0%, #c084fc 100%);
@@ -42,7 +84,7 @@
     font-weight: 700;
   }
 
-  /* 상태 바 (라운드 정보) */
+  /* ?�태 �?(?�운???�보) */
   .status-bar {
     font-size: 1.2rem;
     margin-bottom: 20px;
@@ -50,14 +92,14 @@
   }
 
   /* ========================================
-     설정 화면
+     ?�정 ?�면
      ======================================== */
   #setup-screen {
     display: block;
     margin-top: 100px;
   }
 
-  /* 커스텀 월드컵 제목 */
+  /* 커스?� ?�드�??�목 */
   .custom-title {
     font-size: 2rem;
     color: #c084fc;
@@ -70,7 +112,7 @@
     margin-bottom: 30px;
   }
 
-  /* 설정 선택 */
+  /* ?�정 ?�택 */
   #setup-screen > div {
     margin: 15px 0;
   }
@@ -104,7 +146,7 @@
     color: white;
   }
 
-  /* 시작 버튼 */
+  /* ?�작 버튼 */
   .btn-start {
     padding: 15px 40px;
     font-size: 1.1rem;
@@ -125,14 +167,14 @@
   }
 
   /* ========================================
-     게임 화면
+     게임 ?�면
      ======================================== */
   #game-screen {
     display: none;
     width: 100%;
   }
 
-  /* 대결 컨테이너 - 2개 카드 + VS */
+  /* ?��?컨테?�너 - 2�?카드 + VS */
   .versus-container {
     display: flex;
     justify-content: center;
@@ -141,7 +183,7 @@
     margin-top: 30px;
   }
 
-  /* 후보 래퍼 (카드 + 선택 버튼) */
+  /* ?�보 ?�퍼 (카드 + ?�택 버튼) */
   .candidate-wrapper {
     display: flex;
     flex-direction: column;
@@ -150,7 +192,7 @@
   }
 
   /* ========================================
-     카드 스타일 - 글래스모피즘
+     카드 ?��???- 글?�스모피�?
      ======================================== */
   .card {
     width: 320px;
@@ -166,21 +208,21 @@
     position: relative;
   }
 
-  /* 카드 호버 효과 */
+  /* 카드 ?�버 ?�과 */
   .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 40px rgba(192,132,252,0.3);
     border-color: rgba(192,132,252,0.4);
   }
 
-  /* 재생 중인 카드 */
+  /* ?�생 중인 카드 */
   .card.playing-card {
     border-color: #c084fc;
     box-shadow: 0 0 30px rgba(192,132,252,0.6);
     transform: scale(1.02);
   }
 
-  /* 앨범 이미지 */
+  /* ?�범 ?��?지 */
   .card img {
     width: 100%;
     height: 75%;
@@ -188,7 +230,7 @@
     pointer-events: none;
   }
 
-  /* 카드 정보 영역 */
+  /* 카드 ?�보 ?�역 */
   .card-info {
     padding: 15px;
     background: linear-gradient(to top, rgba(18,15,31,0.9), rgba(255,255,255,0.05));
@@ -211,7 +253,7 @@
     font-size: 0.9rem;
   }
 
-  /* 재생 아이콘 */
+  /* ?�생 ?�이�?*/
   .play-icon {
     position: absolute;
     top: 40%;
@@ -229,11 +271,11 @@
   }
 
   .playing-card .play-icon {
-    opacity: 0;  /* 재생 중일 때는 아이콘 숨김 */
+    opacity: 0;  /* ?�생 중일 ?�는 ?�이�??��? */
   }
 
   /* ========================================
-     선택 버튼
+     ?�택 버튼
      ======================================== */
   .btn-select {
     padding: 15px 40px;
@@ -255,7 +297,7 @@
     transform: scale(1.05);
   }
 
-  /* VS 텍스트 */
+  /* VS ?�스??*/
   .vs-text {
     font-size: 3rem;
     font-weight: bold;
@@ -268,13 +310,13 @@
     text-shadow: 0 0 30px rgba(255,51,102,0.5);
   }
 
-  /* 오디오 숨김 */
+  /* ?�디???��? */
   audio {
     display: none;
   }
 
   /* ========================================
-     결과 화면
+     결과 ?�면
      ======================================== */
   #result-screen {
     display: none;
@@ -290,7 +332,7 @@
     background-clip: text;
   }
 
-  /* 우승 카드 */
+  /* ?�승 카드 */
   .winner-card {
     margin: 0 auto 30px;
     transform: scale(1.2);
@@ -333,7 +375,7 @@
   }
 
   /* ========================================
-     모바일 반응형
+     모바??반응??
      ======================================== */
   @media (max-width: 768px) {
     .versus-container {
@@ -360,115 +402,115 @@
 
 {% block content %}
 <div class="wc-container">
-  <h1>🎵 2Beats World Cup</h1>
+    <h1>������ 2Beats World Cup</h1>
 
   <!-- ========================================
-       설정 화면
+       ?�정 ?�면
        ======================================== -->
-  <div id="setup-screen">
+  <div id="setup-screen" class="wc-card">
       <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">  
             <button class="btn-select" style="padding: 10px 20px; font-size: 0.9rem; background-color: #555;" 
                     onclick="location.href='{% url 'twobeats_worldcup:create_page' %}'">
-                🛠️ 나만의 월드컵 만들기
+                ?���??�만???�드�?만들�?
             </button>
             
             <button class="btn-select" style="padding: 10px 20px; font-size: 0.9rem; background-color: #555;" 
                     onclick="location.href='{% url 'twobeats_worldcup:ranking' %}'">
-                🏆 전체 랭킹 보기
+                ?�� ?�체 ??�� 보기
             </button>
         </div>
     {% if is_custom %}
-      <!-- 커스텀 월드컵 -->
+      <!-- 커스?� ?�드�?-->
       <div class="custom-title">{{ custom_wc.title }}</div>
       <div class="custom-creator">Created by {{ custom_wc.creator.username }}</div>
 
-      <p style="color: rgba(255,255,255,0.7);">총 {{ custom_wc.musics.count }}곡이 준비되어 있습니다.</p>
+      <p style="color: rgba(255,255,255,0.7);">�?{{ custom_wc.musics.count }}곡이 준비되???�습?�다.</p>
       <button class="btn-start" onclick="startCustomGame('{{ custom_wc.access_code }}', {{ custom_wc.musics.count }})">
-        🔥 도전하기
+        ?�� ?�전?�기
       </button>
     {% else %}
-      <!-- 일반 월드컵 -->
-      <h2 style="color: rgba(255,255,255,0.9); margin-bottom: 30px;">게임 설정</h2>
+      <!-- ?�반 ?�드�?-->
+      <h2 style="color: rgba(255,255,255,0.9); margin-bottom: 30px;">게임 ?�정</h2>
       <div>
-        <label>장르: </label>
+        <label>?�르: </label>
         <select id="genre-select">
-          <option value="all">전체 장르</option>
-          <option value="ballad">발라드</option>
-          <option value="dance">댄스</option>
-          <option value="hiphop">힙합</option>
+          <option value="all">?�체 ?�르</option>
+          <option value="ballad">발라??/option>
+          <option value="dance">?�스</option>
+          <option value="hiphop">?�합</option>
           <option value="rnb">R&B</option>
-          <option value="indie">인디</option>
+          <option value="indie">?�디</option>
           <option value="ost">OST</option>
         </select>
       </div>
       <div>
         <label>모드: </label>
         <select id="mode-select">
-          <option value="random">랜덤 매칭</option>
-          <option value="rank">랭킹 매칭 (인기곡)</option>
+          <option value="random">?�덤 매칭</option>
+          <option value="rank">??�� 매칭 (?�기�?</option>
         </select>
       </div>
       <div>
-        <label>라운드: </label>
+        <label>?�운?? </label>
         <select id="round-select">
-          <option value="32">32강</option>
-          <option value="16">16강</option>
-          <option value="8">8강</option>
-          <option value="4">4강</option>
+          <option value="32">32�?/option>
+          <option value="16">16�?/option>
+          <option value="8">8�?/option>
+          <option value="4">4�?/option>
         </select>
       </div>
       <br>
-      <button class="btn-start" onclick="startGame()">게임 시작!</button>
+      <button class="btn-start" onclick="startGame()">게임 ?�작!</button>
     {% endif %}
     
   </div>
 
   <!-- ========================================
-       게임 화면
+       게임 ?�면
        ======================================== -->
-  <div id="game-screen">
-    <div class="status-bar" id="round-info">16강 - 1 / 8</div>
+  <div id="game-screen" class="wc-card">
+    <div class="status-bar" id="round-info">16�?- 1 / 8</div>
 
     <div class="versus-container">
-      <!-- 왼쪽 후보 -->
+      <!-- ?�쪽 ?�보 -->
       <div class="candidate-wrapper">
         <div class="card" id="card-left" onclick="toggleAudio('left')">
-          <div class="play-icon">▶</div>
+          <div class="play-icon">??/div>
           <img id="img-left" src="" alt="cover">
           <div class="card-info">
             <h3 id="title-left">Title</h3>
             <p id="singer-left">Singer</p>
           </div>
         </div>
-        <button class="btn-select" onclick="selectMusic('left')">👆 이 곡 선택</button>
+        <button class="btn-select" onclick="selectMusic('left')">?�� ??�??�택</button>
         <audio id="audio-left"></audio>
       </div>
 
       <!-- VS -->
       <div class="vs-text">VS</div>
 
-      <!-- 오른쪽 후보 -->
+      <!-- ?�른�??�보 -->
       <div class="candidate-wrapper">
         <div class="card" id="card-right" onclick="toggleAudio('right')">
-          <div class="play-icon">▶</div>
+          <div class="play-icon">??/div>
           <img id="img-right" src="" alt="cover">
           <div class="card-info">
             <h3 id="title-right">Title</h3>
             <p id="singer-right">Singer</p>
           </div>
         </div>
-        <button class="btn-select" onclick="selectMusic('right')">👆 이 곡 선택</button>
+        <button class="btn-select" onclick="selectMusic('right')">?�� ??�??�택</button>
         <audio id="audio-right"></audio>
       </div>
     </div>
-    <p style="margin-top: 20px; color: rgba(255,255,255,0.4); font-size: 0.9rem;">※ 앨범 커버를 클릭하면 미리듣기가 재생됩니다.</p>
+    <p style="margin-top: 20px; color: rgba(255,255,255,0.4); font-size: 0.9rem;">???�범 커버�??�릭?�면 미리?�기가 ?�생?�니??</p>
   </div>
 
   <!-- ========================================
-       결과 화면
+       결과 ?�면
        ======================================== -->
-  <div id="result-screen">
-    <h2>🏆 최종 우승! 🏆</h2>
+  <div id="result-screen" class="wc-card">
+    <h2>?�� 최종 ?�승! ?��</h2>
     <div class="winner-card">
       <img id="img-winner" src="" alt="cover">
       <div>
@@ -476,7 +518,7 @@
         <p id="singer-winner"></p>
       </div>
     </div>
-    <button class="btn-start" onclick="location.reload()">다시 하기</button>
+    <button class="btn-start" onclick="location.reload()">?�시 ?�기</button>
   </div>
 </div>
 
@@ -491,7 +533,7 @@
     let gameHistory = [];
     let currentCustomCode = null;
 
-    // 일반 게임 시작
+    // ?�반 게임 ?�작
     async function startGame() {
         const genre = document.getElementById('genre-select').value;
         const sort = document.getElementById('mode-select').value;
@@ -501,20 +543,20 @@
         await fetchAndStart(`/worldcup/candidates/?genre=${genre}&sort=${sort}&count=${count}`, count);
     }
 
-    // 커스텀 게임 시작
+    // 커스?� 게임 ?�작
     async function startCustomGame(code, realCount) {
         currentCustomCode = code;
         await fetchAndStart(`/worldcup/candidates/?custom_code=${code}&count=${realCount}`, realCount);
     }
 
-    // 데이터 가져와서 게임 시작
+    // ?�이??가?��???게임 ?�작
     async function fetchAndStart(url, explicitCount) {
         try {
             const response = await fetch(url);
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.error || "오류 발생");
+                alert(data.error || "?�류 발생");
                 return;
             }
 
@@ -531,11 +573,11 @@
 
         } catch (error) {
             console.error(error);
-            alert("서버 연결 실패");
+            alert("?�버 ?�결 ?�패");
         }
     }
 
-    // 화면 업데이트
+    // ?�면 ?�데?�트
     function updateDisplay() {
         stopAllAudio();
 
@@ -564,16 +606,16 @@
         const totalMatches = Math.floor(candidates.length / 2);
         const currentMatch = (currentPairIndex / 2) + 1;
 
-        let roundText = `${candidates.length}강`;
-        if (candidates.length <= 2) roundText = "결승전";
-        else if (candidates.length <= 4) roundText = "4강";
-        else if (candidates.length <= 8) roundText = "8강";
-        else if (candidates.length <= 16) roundText = "16강";
+        let roundText = `${candidates.length}�?;
+        if (candidates.length <= 2) roundText = "결승??;
+        else if (candidates.length <= 4) roundText = "4�?;
+        else if (candidates.length <= 8) roundText = "8�?;
+        else if (candidates.length <= 16) roundText = "16�?;
 
         document.getElementById('round-info').textContent = `${roundText} - ${currentMatch} / ${totalMatches}`;
     }
 
-    // 오디오 토글
+    // ?�디???��?
     function toggleAudio(side) {
         const targetAudio = document.getElementById(`audio-${side}`);
         const otherAudio = document.getElementById(`audio-${side === 'left' ? 'right' : 'left'}`);
@@ -585,7 +627,7 @@
             otherAudio.currentTime = 0;
             otherCard.classList.remove('playing-card');
 
-            targetAudio.play().catch(e => console.log("재생 실패:", e));
+            targetAudio.play().catch(e => console.log("?�생 ?�패:", e));
             targetCard.classList.add('playing-card');
         } else {
             targetAudio.pause();
@@ -593,7 +635,7 @@
         }
     }
 
-    // 모든 오디오 정지
+    // 모든 ?�디???��?
     function stopAllAudio() {
         document.querySelectorAll('audio').forEach(a => {
             a.pause();
@@ -604,7 +646,7 @@
         });
     }
 
-    // 음악 선택
+    // ?�악 ?�택
     function selectMusic(side) {
         stopAllAudio();
 
@@ -634,7 +676,7 @@
         }
     }
 
-    // 라운드 종료
+    // ?�운??종료
     function endRound() {
         if (candidates.length <= 2) {
             const finalWinner = nextRound[0];
@@ -648,7 +690,7 @@
         }
     }
 
-    // 결과 서버 전송
+    // 결과 ?�버 ?�송
     async function sendResultToServer(winner) {
         try {
             const user_uid = "{% if user.is_authenticated %}{{ user.pk }}{% else %}{% endif %}";
@@ -669,12 +711,13 @@
             if (response.ok) {
                 window.location.href = `/worldcup/result/${data.game_id}/`;
             } else {
-                alert("저장 실패: " + JSON.stringify(data));
+                alert("?�???�패: " + JSON.stringify(data));
             }
         } catch (e) {
-            console.error("저장 중 에러", e);
-            alert("서버 통신 오류");
+            console.error("?�??�??�러", e);
+            alert("?�버 ?�신 ?�류");
         }
     }
 </script>
 {% endblock %}
+
