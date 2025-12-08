@@ -1,5 +1,95 @@
 {% extends "base.html" %}
 {% block title %}플레이리스트 | 2beats{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* === 하단 로컬 플레이어 스타일 === */
+    #local-player {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: rgba(18, 15, 31, 0.98);
+        border-top: 1px solid #1f1b2d;
+        padding: 12px 24px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+        display: none; /* 기본 숨김 */
+        z-index: 1000;
+        color: #f7f8ff;
+        backdrop-filter: blur(10px);
+    }
+    #local-player.active { display: block; }
+
+    .player-content {
+        max-width: 1000px; margin: 0 auto;
+        display: grid; grid-template-columns: 200px 1fr 150px;
+        gap: 2rem; align-items: center;
+    }
+
+    /* 앨범아트 & 정보 */
+    .player-info { display: flex; gap: 12px; align-items: center; overflow: hidden; }
+    .player-thumb {
+        width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
+        background: #333; flex-shrink: 0;
+    }
+    .player-text { overflow: hidden; white-space: nowrap; }
+    .player-title { margin: 0; font-size: 0.95rem; font-weight: 700; text-overflow: ellipsis; overflow: hidden; }
+    .player-artist { margin: 0; font-size: 0.8rem; color: #9ca3af; text-overflow: ellipsis; overflow: hidden; }
+
+    /* 컨트롤러 */
+    .player-controls { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .control-btns { display: flex; gap: 20px; align-items: center; }
+    
+    .btn-control {
+        background: none; border: none; color: #f7f8ff; cursor: pointer; font-size: 1.2rem;
+        padding: 4px; transition: color 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-control:hover { color: #c084fc; }
+    .btn-play { font-size: 2.2rem; color: #c084fc; }
+    
+    /* 진행바 */
+    .progress-wrap { width: 100%; display: flex; align-items: center; gap: 10px; font-size: 0.75rem; color: #9ca3af; }
+    .progress-bar {
+        flex: 1; height: 4px; background: rgba(255,255,255,0.1);
+        border-radius: 2px; cursor: pointer; position: relative;
+    }
+    .progress-fill {
+        height: 100%; background: #c084fc; border-radius: 2px; width: 0%;
+        position: absolute; top: 0; left: 0;
+    }
+
+    /* 전체 재생 버튼 */
+    .btn-play-all {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, #c084fc, #7c3aed);
+        color: white; border: none; padding: 10px 20px;
+        border-radius: 24px; font-weight: 700; cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 15px rgba(124,58,237,0.3);
+    }
+    .btn-play-all:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124,58,237,0.4);
+    }
+
+    /* 리스트 내 재생 버튼 (작게) */
+    .btn-list-play {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: rgba(192,132,252,0.1); color: #c084fc;
+        border: 1px solid rgba(192,132,252,0.2);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s; padding-left: 3px;
+    }
+    .btn-list-play:hover {
+        background: #c084fc; color: #0b1220;
+    }
+    .playing-row { background: rgba(192,132,252,0.1) !important; }
+
+    @media (max-width: 768px) {
+        .player-content { grid-template-columns: 1fr auto; gap: 1rem; }
+        .player-controls { display: none; } /* 모바일 간소화 */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
   <div style="margin-bottom:10px;">
     <a class="muted" href="{% url 'mylist' %}?tab={{ kind }}">← 마이 리스트로</a>
@@ -10,12 +100,22 @@
       <div>
         <p class="pill-label" style="margin:0 0 8px;">{% if is_music %}음악{% else %}영상{% endif %} 플레이리스트</p>
         <h1 style="margin:0 0 6px;">{{ playlist.folder_name }}</h1>
-        <p class="muted" style="margin:0;">생성일 {{ playlist.created_at|date:"Y-m-d H:i" }}</p>
+        <p class="muted" style="margin:0;">
+            총 {{ items.count }}곡 | 생성일 {{ playlist.created_at|date:"Y-m-d" }}
+        </p>
       </div>
+      
+      {% if is_music and items %}
+      <div>
+          <button class="btn-play-all" onclick="playAll()">
+              <span style="font-size:1.1rem;">▶</span> 전체 재생
+          </button>
+      </div>
+      {% endif %}
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:14px;">
+  <div class="card" style="margin-bottom:100px;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
       <h3 style="margin:0;">트랙 목록</h3>
       {% if items %}
@@ -27,20 +127,26 @@
       <form method="post" action="">
         {% csrf_token %}
         <input type="hidden" name="action" value="reorder">
-        <table>
+        <table id="playlist-table">
           <thead>
             <tr>
-              <th style="width: 80px;">순서</th>
+              <th style="width: 50px; text-align:center;"></th>
+              <th style="width: 70px;">순서</th>
               <th>제목</th>
               <th>아티스트</th>
-              <th style="width: 60px;"></th> </tr>
+            </tr>
           </thead>
           <tbody>
             {% for item in items %}
-              <tr>
+              <tr id="track-row-{{ forloop.counter0 }}">
+                <td style="text-align:center;">
+                  {% if is_music and item.music.music_root %}
+                    <button type="button" class="btn-list-play" onclick="playTrack({{ forloop.counter0 }})">▶</button>
+                  {% endif %}
+                </td>
                 <td>
                     <input type="number" name="order_{{ item.id }}" value="{{ item.order }}" min="1" 
-                           style="width:60px; padding:6px; border-radius:8px; border:1px solid var(--border); background:#0c0a18; color:var(--text); text-align:center;">
+                           style="width:50px; padding:6px; border-radius:8px; border:1px solid var(--border); background:#0c0a18; color:var(--text); text-align:center;">
                 </td>
                 <td>
                   {% if is_music %}
@@ -56,8 +162,6 @@
                     {{ item.video.video_singer }}
                   {% endif %}
                 </td>
-                <td>
-                    </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -70,15 +174,189 @@
       <div style="text-align:center; padding:40px 0; color:#999;">
         <p style="font-size:2rem; margin-bottom:10px;">📭</p>
         <p>플레이리스트가 비어있습니다.</p>
-        <p style="font-size:0.9rem;">
-            {% if is_music %}
-            <a href="{% url 'music_explore:search' %}" style="color:#1db954;">음악 검색</a>이나 차트에서 마음에 드는 곡을 추가해보세요.
-            {% else %}
-            <a href="{% url 'video_explore:video_list' %}" style="color:#1db954;">영상 목록</a>에서 영상을 추가해보세요.
-            {% endif %}
-        </p>
       </div>
     {% endif %}
   </div>
 
-  {% endblock %}
+  <div id="local-player">
+    <div class="player-content">
+        <div class="player-info">
+            <img id="lp-thumb" class="player-thumb" src="" style="display:none;">
+            <div id="lp-thumb-default" class="player-thumb" style="display:flex; align-items:center; justify-content:center;">🎵</div>
+            <div class="player-text">
+                <h4 id="lp-title" class="player-title">재생 중인 곡 없음</h4>
+                <p id="lp-artist" class="player-artist">-</p>
+            </div>
+        </div>
+        
+        <div class="player-controls">
+            <div class="control-btns">
+                <button class="btn-control" onclick="playPrev()" title="이전 곡">⏮</button>
+                <button class="btn-control btn-play" id="lp-playbtn" onclick="togglePlay()">▶</button>
+                <button class="btn-control" onclick="playNext()" title="다음 곡">⏭</button>
+            </div>
+            <div class="progress-wrap">
+                <span id="lp-current">0:00</span>
+                <div class="progress-bar" id="lp-progress-bar" onclick="seek(event)">
+                    <div class="progress-fill" id="lp-progress-fill"></div>
+                </div>
+                <span id="lp-duration">0:00</span>
+            </div>
+        </div>
+
+        <div style="text-align:right;">
+            </div>
+    </div>
+  </div>
+  
+  <audio id="lp-audio"></audio>
+
+  <script>
+    // 1. 플레이리스트 데이터 구성 (Django Template -> JS Array)
+    const playlistData = [
+      {% for item in items %}
+        {% if is_music and item.music.music_root %}
+        {
+            index: {{ forloop.counter0 }},
+            title: "{{ item.music.music_title|escapejs }}",
+            artist: "{{ item.music.music_singer|escapejs }}",
+            url: "{{ item.music.music_root.url }}",
+            thumb: "{% if item.music.music_thumbnail %}{{ item.music.music_thumbnail.url }}{% endif %}"
+        },
+        {% endif %}
+      {% endfor %}
+    ];
+
+    let currentIndex = -1;
+    let isPlaying = false;
+
+    const audio = document.getElementById('lp-audio');
+    const player = document.getElementById('local-player');
+    const playBtn = document.getElementById('lp-playbtn');
+    const titleEl = document.getElementById('lp-title');
+    const artistEl = document.getElementById('lp-artist');
+    const thumbEl = document.getElementById('lp-thumb');
+    const thumbDefEl = document.getElementById('lp-thumb-default');
+    const progressFill = document.getElementById('lp-progress-fill');
+    const progressBar = document.getElementById('lp-progress-bar');
+    const currTimeEl = document.getElementById('lp-current');
+    const durTimeEl = document.getElementById('lp-duration');
+
+    // 2. 전체 재생 (첫 곡부터 시작)
+    function playAll() {
+        if (playlistData.length > 0) {
+            playTrack(0);
+        } else {
+            alert("재생할 곡이 없습니다.");
+        }
+    }
+
+    // 3. 특정 트랙 재생
+    function playTrack(index) {
+        if (index < 0 || index >= playlistData.length) return;
+
+        currentIndex = index;
+        const track = playlistData[index];
+
+        // UI 업데이트
+        titleEl.textContent = track.title;
+        artistEl.textContent = track.artist;
+        
+        if (track.thumb) {
+            thumbEl.src = track.thumb;
+            thumbEl.style.display = 'block';
+            thumbDefEl.style.display = 'none';
+        } else {
+            thumbEl.style.display = 'none';
+            thumbDefEl.style.display = 'flex';
+        }
+
+        // 테이블 하이라이트 처리
+        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('playing-row'));
+        const row = document.getElementById(`track-row-${track.index}`);
+        if(row) row.classList.add('playing-row');
+
+        // 플레이어 표시 및 재생
+        player.classList.add('active');
+        audio.src = track.url;
+        audio.play()
+            .then(() => {
+                isPlaying = true;
+                updatePlayButton();
+            })
+            .catch(err => console.log("재생 오류:", err));
+    }
+
+    // 4. 다음 곡 / 이전 곡
+    function playNext() {
+        if (currentIndex < playlistData.length - 1) {
+            playTrack(currentIndex + 1);
+        } else {
+            // 마지막 곡이면 정지 or 처음으로? (여기선 정지)
+            isPlaying = false;
+            updatePlayButton();
+        }
+    }
+
+    function playPrev() {
+        // 재생 시간이 3초 이상 지났으면 곡의 처음으로
+        if (audio.currentTime > 3) {
+            audio.currentTime = 0;
+            return;
+        }
+        // 아니면 이전 곡으로
+        if (currentIndex > 0) {
+            playTrack(currentIndex - 1);
+        }
+    }
+
+    // 5. 오디오 이벤트 리스너
+    
+    // 곡이 끝나면 자동으로 다음 곡 재생 (순차 재생 핵심)
+    audio.addEventListener('ended', () => {
+        playNext();
+    });
+
+    // 재생/일시정지 토글
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play();
+            isPlaying = true;
+        } else {
+            audio.pause();
+            isPlaying = false;
+        }
+        updatePlayButton();
+    }
+
+    function updatePlayButton() {
+        playBtn.textContent = isPlaying ? '⏸' : '▶';
+    }
+
+    // 진행바 업데이트
+    audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = percent + '%';
+            currTimeEl.textContent = formatTime(audio.currentTime);
+            durTimeEl.textContent = formatTime(audio.duration);
+        }
+    });
+
+    // 탐색 (Seek)
+    function seek(e) {
+        if (!audio.duration) return;
+        const width = progressBar.clientWidth;
+        const clickX = e.offsetX;
+        const duration = audio.duration;
+        audio.currentTime = (clickX / width) * duration;
+    }
+
+    // 시간 포맷
+    function formatTime(s) {
+        const min = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return min + ':' + (sec < 10 ? '0' + sec : sec);
+    }
+  </script>
+{% endblock %}
