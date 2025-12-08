@@ -16,12 +16,26 @@
             font-family: 'Malgun Gothic', sans-serif;
             background-color: #FFFFFF;
             color: #000000;
+            padding-top: 80px !important;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 140px !important;
+            }
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            padding-top: 100px !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding-top: 80px !important;
+            }
         }
 
         /* 검색창 */
@@ -102,6 +116,7 @@
             border: 1px solid #e0e0e0;
             border-radius: 5px;
             background: white;
+            color: #333 !important;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -148,11 +163,12 @@
 
         .video-description h3 {
             margin-bottom: 10px;
+            color: #222 !important;
         }
 
         .video-description p {
             line-height: 1.6;
-            color: #333;
+            color: #333 !important;
         }
 
         /* 태그 */
@@ -298,7 +314,6 @@
     </style>
 </head>
 <body>
-    {% include 'shared/navbar.html' %}
     {% include 'shared/navbar.html' %}
 
     <div class="container">

@@ -6,6 +6,17 @@
 
 {% block extra_css %}
 <style>
+    /* 상단 여백 추가 */
+    .container {
+        padding-top: 3rem !important;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding-top: 4rem !important;
+        }
+    }
+
     /* 음악 상세 헤더 */
     .music-detail-header {
         display: flex;
