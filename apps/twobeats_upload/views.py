@@ -6,6 +6,7 @@ from .forms import MusicForm, VideoForm, MusicFileForm, VideoFileForm
 from django.db.models import F
 from django.urls import reverse
 from apps.twobeats_music_explore.models import MusicLike, MusicComment
+from apps.twobeats_video_explore.models import VideoLike, VideoComment
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 
@@ -341,6 +342,130 @@ def music_comment_delete(request, comment_id):
             'comment_count': music.comments.count()
         })
     except MusicComment.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '댓글을 찾을 수 없습니다.'
+        }, status=404)
+    
+
+# ========================================
+# 🔥 Video API
+# ========================================
+
+@require_POST
+def video_play(request, video_id):
+    """영상 재생 시 조회수 증가"""
+    try:
+        video = Video.objects.get(id=video_id)
+        video.video_views += 1
+        video.save(update_fields=['video_views'])
+        
+        return JsonResponse({
+            'success': True,
+            'view_count': video.video_views
+        })
+    except Video.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '영상을 찾을 수 없습니다.'
+        }, status=404)
+
+
+@require_POST
+@login_required
+def video_like(request, video_id):
+    """영상 좋아요 토글"""
+    try:
+        video = Video.objects.get(id=video_id)
+        user = request.user
+        
+        like_exists = VideoLike.objects.filter(user=user, video=video).exists()
+        
+        if like_exists:
+            VideoLike.objects.filter(user=user, video=video).delete()
+            video.video_like_count = max(0, video.video_like_count - 1)
+            is_liked = False
+        else:
+            VideoLike.objects.create(user=user, video=video)
+            video.video_like_count += 1
+            is_liked = True
+        
+        video.save(update_fields=['video_like_count'])
+        
+        return JsonResponse({
+            'success': True,
+            'is_liked': is_liked,
+            'like_count': video.video_like_count
+        })
+    except Video.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '영상을 찾을 수 없습니다.'
+        }, status=404)
+
+
+@require_POST
+@login_required
+def video_comment_create(request, video_id):
+    """영상 댓글 작성"""
+    try:
+        video = Video.objects.get(id=video_id)
+        content = request.POST.get('content', '').strip()
+        
+        if not content:
+            return JsonResponse({
+                'success': False,
+                'error': '댓글 내용을 입력해주세요.'
+            }, status=400)
+        
+        comment = VideoComment.objects.create(
+            user=request.user,
+            video=video,
+            content=content
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'user': comment.user.username,
+                'user_initial': comment.user.username[0].upper(),
+                'content': comment.content,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
+                'is_owner': True
+            },
+            'comment_count': video.comments.count()
+        })
+    except Video.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '영상을 찾을 수 없습니다.'
+        }, status=404)
+
+
+@require_POST
+@login_required
+def video_comment_delete(request, comment_id):
+    """영상 댓글 삭제"""
+    try:
+        comment = VideoComment.objects.get(id=comment_id)
+        
+        if comment.user != request.user:
+            return JsonResponse({
+                'success': False,
+                'error': '본인의 댓글만 삭제할 수 있습니다.'
+            }, status=403)
+        
+        video_id = comment.video.id
+        comment.delete()
+        
+        video = Video.objects.get(id=video_id)
+        
+        return JsonResponse({
+            'success': True,
+            'comment_count': video.comments.count()
+        })
+    except VideoComment.DoesNotExist:
         return JsonResponse({
             'success': False,
             'error': '댓글을 찾을 수 없습니다.'

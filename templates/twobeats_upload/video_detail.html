@@ -165,6 +165,8 @@
         </div>
       </div>
 
+      
+      
     </div>
 
   </div>
@@ -175,7 +177,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
-      댓글 <span class="comment-count-badge" id="comment-count-display">(0)</span>
+      댓글 <span class="comment-count-badge" id="comment-count-display">({{ video.comments.count }})</span>
     </h3>
     
     <!-- 댓글 작성 폼 -->
@@ -206,9 +208,32 @@
     
     <!-- 댓글 리스트 -->
     <div class="comments-list" id="commentsList">
+      {% for comment in video.comments.all %}
+      <div class="comment-item" data-comment-id="{{ comment.id }}">
+        <div class="comment-header">
+          <div class="comment-author">
+            <div class="author-avatar">{{ comment.user.username|slice:":1"|upper }}</div>
+            <div class="author-info">
+              <span class="author-name">{{ comment.user.username }}</span>
+              <span class="comment-time">{{ comment.created_at|timesince }} 전</span>
+            </div>
+          </div>
+          {% if comment.user == user %}
+          <button class="comment-delete-btn" data-comment-id="{{ comment.id }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+          {% endif %}
+        </div>
+        <div class="comment-content">{{ comment.content }}</div>
+      </div>
+      {% empty %}
       <div class="no-comments">
         <p>첫 번째 댓글을 남겨보세요!</p>
       </div>
+      {% endfor %}
     </div>
   </div>
 
@@ -239,9 +264,58 @@ let viewCountSent = false;
 
 video.addEventListener('play', function() {
   if (!viewCountSent) {
-    // TODO: 조회수 증가 API 호출
-    console.log('Video play - view count increase');
-    viewCountSent = true;
+    fetch('{% url "twobeats_upload:video_play" video.pk %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('view-count').textContent = data.view_count;
+        viewCountSent = true;
+      }
+    })
+    .catch(error => console.error('Error:', error));
+  }
+});
+
+// 🔥 좋아요 토글
+document.getElementById('like-btn').addEventListener('click', function() {
+  fetch('{% url "twobeats_upload:video_like" video.pk %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      if (data.is_liked) {
+        this.classList.add('active');
+      } else {
+        this.classList.remove('active');
+      }
+      document.getElementById('like-count').textContent = data.like_count;
+    }
+  })
+  .catch(error => console.error('Error:', error));
+});
+
+// 공유 버튼
+document.querySelector('.share-btn').addEventListener('click', function() {
+  if (navigator.share) {
+    navigator.share({
+      title: '{{ video.video_title }}',
+      text: '{{ video.video_singer }} - {{ video.video_title }}',
+      url: window.location.href
+    });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert('링크가 복사되었습니다!');
   }
 });
 
@@ -257,10 +331,108 @@ if (commentForm) {
       return;
     }
     
-    // TODO: 댓글 작성 API 호출
-    console.log('Comment submit:', content);
+    const formData = new FormData();
+    formData.append('content', content);
+    
+    fetch('{% url "twobeats_upload:video_comment_create" video.pk %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('commentInput').value = '';
+        document.getElementById('comment-count-display').textContent = `(${data.comment_count})`;
+        
+        const commentsList = document.getElementById('commentsList');
+        const noComments = commentsList.querySelector('.no-comments');
+        
+        if (noComments) {
+          noComments.remove();
+        }
+        
+        const commentHTML = `
+          <div class="comment-item" data-comment-id="${data.comment.id}">
+            <div class="comment-header">
+              <div class="comment-author">
+                <div class="author-avatar">${data.comment.user_initial}</div>
+                <div class="author-info">
+                  <span class="author-name">${data.comment.user}</span>
+                  <span class="comment-time">방금 전</span>
+                </div>
+              </div>
+              ${data.comment.is_owner ? `
+              <button class="comment-delete-btn" data-comment-id="${data.comment.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+              ` : ''}
+            </div>
+            <div class="comment-content">${data.comment.content}</div>
+          </div>
+        `;
+        
+        commentsList.insertAdjacentHTML('afterbegin', commentHTML);
+        
+        const newDeleteBtn = commentsList.querySelector(`[data-comment-id="${data.comment.id}"] .comment-delete-btn`);
+        if (newDeleteBtn) {
+          newDeleteBtn.addEventListener('click', handleCommentDelete);
+        }
+      } else {
+        alert(data.error || '댓글 작성에 실패했습니다.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
+    });
   });
 }
+
+// 🔥 댓글 삭제 핸들러
+function handleCommentDelete() {
+  if (confirm('댓글을 삭제하시겠습니까?')) {
+    const commentId = this.dataset.commentId;
+    
+    fetch(`/upload/video-comment/${commentId}/delete/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+        commentItem.remove();
+        
+        document.getElementById('comment-count-display').textContent = `(${data.comment_count})`;
+        
+        const commentsList = document.getElementById('commentsList');
+        if (commentsList.children.length === 0) {
+          commentsList.innerHTML = '<div class="no-comments"><p>첫 번째 댓글을 남겨보세요!</p></div>';
+        }
+      } else {
+        alert(data.error || '댓글 삭제에 실패했습니다.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다.');
+    });
+  }
+}
+
+// 기존 삭제 버튼에 이벤트 추가
+document.querySelectorAll('.comment-delete-btn').forEach(btn => {
+  btn.addEventListener('click', handleCommentDelete);
+});
 </script>
 
 <style>
@@ -583,6 +755,41 @@ if (commentForm) {
   border-color: #c084fc;
 }
 
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(192, 132, 252, 0.4);
+  color: #c084fc;
+  transform: translateY(-2px);
+}
+
+.like-btn.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.like-btn.active svg {
+  fill: #ef4444;
+}
+
 /* ========================================
    🔥 댓글 섹션 (full-width)
    ======================================== */
@@ -683,6 +890,86 @@ if (commentForm) {
   margin-top: 1.5rem;
 }
 
+.comment-item {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.comment-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(192, 132, 252, 0.2);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.author-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.comment-time {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.comment-delete-btn {
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 0.5rem;
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.comment-delete-btn:hover {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: #f87171;
+}
+
+.comment-content {
+  color: #cbd5e1;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 .no-comments {
   text-align: center;
   padding: 3rem 2rem;
@@ -717,6 +1004,10 @@ if (commentForm) {
   }
 
   .stats-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
     grid-template-columns: 1fr;
   }
 

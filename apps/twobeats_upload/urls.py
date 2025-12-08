@@ -23,6 +23,10 @@ urlpatterns = [
     path('video/<int:pk>/', views.video_detail, name='video_detail'),
     path('video/<int:pk>/edit/', views.video_update, name='video_update'),
     path('video/<int:pk>/delete/', views.video_delete, name='video_delete'),
+    path('video/<int:video_id>/play/', views.video_play, name='video_play'),
+    path('video/<int:video_id>/like/', views.video_like, name='video_like'),
+    path('video/<int:video_id>/comment/create/', views.video_comment_create, name='video_comment_create'),
+    path('video-comment/<int:comment_id>/delete/', views.video_comment_delete, name='video_comment_delete'),
     # path('video/<int:pk>/like/', views.video_like, name='video_like'),  # ⚠️ 주석처리: 함수 주석처리됨
 
 
