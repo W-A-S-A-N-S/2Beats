@@ -21,7 +21,12 @@
           <tbody>
             {% for item in music_history %}
               <tr>
-                <td>{{ item.music.music_title }}</td>
+                <td>
+                  <a href="{% url 'music_explore:detail' item.music.id %}" 
+                     style="font-weight:bold; color:var(--text); text-decoration:none;">
+                    {{ item.music.music_title }}
+                  </a>
+                </td>
                 <td class="muted">{{ item.music.music_singer }}</td>
                 <td class="muted">{{ item.played_at|date:"Y-m-d H:i" }}</td>
               </tr>
@@ -47,7 +52,12 @@
           <tbody>
             {% for item in video_history %}
               <tr>
-                <td>{{ item.video.video_title }}</td>
+                <td>
+                  <a href="{% url 'video_explore:video_detail' item.video.id %}" 
+                     style="font-weight:bold; color:var(--text); text-decoration:none;">
+                    {{ item.video.video_title }}
+                  </a>
+                </td>
                 <td class="muted">{{ item.video.video_singer }}</td>
                 <td class="muted">{{ item.played_at|date:"Y-m-d H:i" }}</td>
               </tr>
