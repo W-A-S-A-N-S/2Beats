@@ -6,6 +6,7 @@ from django.core.cache import cache  # video_detail: 관련 영상 추천 캐싱
 from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField, Case, When, FloatField  # video_detail: 하이브리드 추천 알고리즘
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from apps.twobeats_account.models import VideoHistory
 from django.utils import timezone  # video_detail: 신규 영상 보너스 계산
 from datetime import timedelta  # video_detail: 최근 7일 필터링
 import mimetypes
@@ -332,6 +333,11 @@ def increase_play_count(request, video_id):
         video.video_play_count += 1
         video.save(update_fields=['video_play_count'])
         request.session[played_key] = True
+        if request.user.is_authenticated:
+            try:
+                VideoHistory.objects.create(user=request.user, video=video)
+            except Exception:
+                pass
         return JsonResponse({
             'success': True,
             'play_count': video.video_play_count,

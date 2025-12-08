@@ -854,7 +854,38 @@
                 showToast('먼저 음악을 재생해주세요.', 'error');
                 return;
             }
-            showToast('플레이리스트 기능 준비중입니다.', 'info');
+            {% if not user.is_authenticated %}
+            showToast('로그인이 필요합니다.', 'error');
+            return;
+            {% endif %}
+
+            const musicId = currentMusicData.id;
+            const csrftoken = getCookie('csrftoken');
+
+            fetch('/account/api/playlist/add-music/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: `music_id=${encodeURIComponent(musicId)}`,
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.removed) {
+                        showToast('플레이리스트에서 제거했습니다.', 'info');
+                    } else {
+                        showToast('나의 플레이리스트에 추가했어요.', 'success');
+                    }
+                } else {
+                    showToast(data.error || '처리에 실패했습니다.', 'error');
+                }
+            })
+            .catch(() => {
+                showToast('추가/제거 중 오류가 발생했습니다.', 'error');
+            });
         }
         
         function updateProgress() {
@@ -877,18 +908,44 @@
             }
         }
         
+        function setProgressFromEvent(e) {
+            if (!audio.duration) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const rect = progressBar.getBoundingClientRect();
+            const pos = (clientX - rect.left) / rect.width;
+            const clampedPos = Math.max(0, Math.min(1, pos));
+            audio.currentTime = clampedPos * audio.duration;
+            progress.style.width = (clampedPos * 100) + '%';
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+        }
+
         progressBar.addEventListener('mousedown', function(e) {
+            if (!audio.duration) return;
             isDragging = true;
-            setProgress(e);
+            setProgressFromEvent(e);
         });
-        
         document.addEventListener('mousemove', function(e) {
             if (isDragging) {
-                setProgress(e);
+                setProgressFromEvent(e);
             }
         });
-        
         document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        // 터치 드래그 지원
+        progressBar.addEventListener('touchstart', function(e) {
+            if (!audio.duration) return;
+            isDragging = true;
+            setProgressFromEvent(e);
+        }, { passive: false });
+        document.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                setProgressFromEvent(e);
+                e.preventDefault();
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', function() {
             isDragging = false;
         });
         

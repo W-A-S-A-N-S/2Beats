@@ -1,7 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
@@ -18,6 +20,7 @@ from .models import (
     VideoHistory,
     MusicPlaylist,
     VideoPlaylist,
+    PlaylistTrack,
 )
 
 # 통계 데이터를 위한 import
@@ -209,3 +212,37 @@ def playlist_detail(request, playlist_id):
             'kind': kind,
         },
     )
+
+
+@require_POST
+@login_required(login_url='/account/login/')
+def add_music_to_playlist(request):
+    music_id = request.POST.get('music_id')
+    if not music_id:
+        return JsonResponse({'success': False, 'error': 'music_id is required'}, status=400)
+
+    music = get_object_or_404(Music, pk=music_id)
+    playlist, _ = MusicPlaylist.objects.get_or_create(
+        user=request.user,
+        folder_name='나의 플레이리스트',
+    )
+    track = PlaylistTrack.objects.filter(playlist=playlist, music=music).first()
+    if track:
+        track.delete()
+        return JsonResponse({
+            'success': True,
+            'playlist_id': playlist.id,
+            'removed': True,
+        })
+    else:
+        PlaylistTrack.objects.create(
+            playlist=playlist,
+            music=music,
+            order=playlist.tracks.count() + 1,
+        )
+
+    return JsonResponse({
+        'success': True,
+        'playlist_id': playlist.id,
+        'removed': False,
+    })

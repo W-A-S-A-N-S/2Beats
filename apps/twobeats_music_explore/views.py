@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.db.models import Q, F
 from django.core.paginator import Paginator
 from apps.twobeats_upload.models import Music, Tag
+from apps.twobeats_account.models import MusicHistory
 from .models import MusicLike,MusicComment
 
 
@@ -256,6 +257,12 @@ def increase_play_count(request, music_id):
             music_count=F('music_count') + 1
         )
         request.session[played_key] = True
+        # 히스토리 기록 (로그인 사용자만)
+        if request.user.is_authenticated:
+            try:
+                MusicHistory.objects.create(user=request.user, music_id=music_id)
+            except Exception:
+                pass
         return JsonResponse({'success': True, 'message': '재생수 증가'})
     
     return JsonResponse({'success': False, 'message': '이미 카운트됨'})
