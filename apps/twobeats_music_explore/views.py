@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Q, F
 from django.core.paginator import Paginator
+from django.utils import timezone
 from apps.twobeats_upload.models import Music, Tag
 from apps.twobeats_account.models import MusicHistory, MusicPlaylist
 from .models import MusicLike,MusicComment
@@ -257,19 +258,27 @@ def search_autocomplete(request):
 
 def increase_play_count(request, music_id):
     """재생수 증가 API"""
-    # 세션으로 중복 방지
+    # 재생수 증가는 세션으로 중복 방지
     played_key = f'played_music_{music_id}'
     if not request.session.get(played_key):
         Music.objects.filter(pk=music_id).update(
             music_count=F('music_count') + 1
         )
         request.session[played_key] = True
-        # 히스토리 기록 (로그인 사용자만)
-        if request.user.is_authenticated:
-            try:
+
+    # 히스토리는 세션과 관계없이 항상 업데이트 (로그인 사용자만)
+    if request.user.is_authenticated:
+        try:
+            # 기존 히스토리가 있으면 재생 시각만 업데이트
+            updated = MusicHistory.objects.filter(
+                user=request.user,
+                music_id=music_id
+            ).update(played_at=timezone.now())
+
+            # 기존 히스토리가 없으면 새로 생성
+            if not updated:
                 MusicHistory.objects.create(user=request.user, music_id=music_id)
-            except Exception:
-                pass
-        return JsonResponse({'success': True, 'message': '재생수 증가'})
-    
-    return JsonResponse({'success': False, 'message': '이미 카운트됨'})
+        except Exception:
+            pass
+
+    return JsonResponse({'success': True, 'message': '처리 완료'})

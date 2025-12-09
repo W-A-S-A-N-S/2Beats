@@ -7,7 +7,7 @@ from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField, Case,
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from apps.twobeats_account.models import VideoHistory
-from django.utils import timezone  # video_detail: 신규 영상 보너스 계산
+from django.utils import timezone  # video_detail: 신규 영상 보너스 계산, 히스토리 시각 업데이트
 from datetime import timedelta  # video_detail: 최근 7일 필터링
 import mimetypes
 import logging  # video_detail: 추천 알고리즘 에러 로깅
@@ -327,27 +327,32 @@ def increase_play_count(request, video_id):
 
     video = get_object_or_404(Video, pk=video_id)
 
-    # 재생수 증가 (세션으로 중복 방지)
+    # 재생수 증가는 세션으로 중복 방지
     played_key = f'played_video_{video_id}'
     if not request.session.get(played_key):
         video.video_play_count += 1
         video.save(update_fields=['video_play_count'])
         request.session[played_key] = True
-        if request.user.is_authenticated:
-            try:
+
+    # 히스토리는 세션과 관계없이 항상 업데이트 (로그인 사용자만)
+    if request.user.is_authenticated:
+        try:
+            # 기존 히스토리가 있으면 재생 시각만 업데이트
+            updated = VideoHistory.objects.filter(
+                user=request.user,
+                video=video
+            ).update(played_at=timezone.now())
+
+            # 기존 히스토리가 없으면 새로 생성
+            if not updated:
                 VideoHistory.objects.create(user=request.user, video=video)
-            except Exception:
-                pass
-        return JsonResponse({
-            'success': True,
-            'play_count': video.video_play_count,
-            'message': '재생수 증가'
-        })
+        except Exception:
+            pass
 
     return JsonResponse({
-        'success': False,
+        'success': True,
         'play_count': video.video_play_count,
-        'message': '이미 카운트됨'
+        'message': '처리 완료'
     })
 
 
