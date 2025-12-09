@@ -1110,64 +1110,145 @@
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
             }
-            
+
+            const volumeSlider = document.getElementById('volume-slider');
+
             switch(e.code) {
                 case 'Space':
                     e.preventDefault();
                     togglePlay();
                     break;
+
                 case 'ArrowLeft':
+                    e.preventDefault();
                     if (audio.src) {
-                        audio.currentTime -= 5;
+                        audio.currentTime = Math.max(0, audio.currentTime - 5);
                     }
                     break;
+
                 case 'ArrowRight':
+                    e.preventDefault();
                     if (audio.src) {
-                        audio.currentTime += 5;
+                        audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
                     }
                     break;
+
                 case 'ArrowUp':
                     e.preventDefault();
-                    changeVolume(Math.min(100, audio.volume * 100 + 10));
-                    document.getElementById('volume-slider').value = audio.volume * 100;
+                    // 볼륨 10% 증가
+                    audio.volume = Math.min(1, audio.volume + 0.1);
+                    if (volumeSlider) {
+                        volumeSlider.value = audio.volume * 100;
+                    }
+                    updateVolumeIcon(audio.volume * 100);
                     break;
+
                 case 'ArrowDown':
                     e.preventDefault();
-                    changeVolume(Math.max(0, audio.volume * 100 - 10));
-                    document.getElementById('volume-slider').value = audio.volume * 100;
+                    // 볼륨 10% 감소
+                    audio.volume = Math.max(0, audio.volume - 0.1);
+                    if (volumeSlider) {
+                        volumeSlider.value = audio.volume * 100;
+                    }
+                    updateVolumeIcon(audio.volume * 100);
+                    break;
+
+                case 'KeyM':
+                    e.preventDefault();
+                    toggleMute();
                     break;
             }
         });
-        audio.addEventListener('play', function() {
-            if (currentMusicData) {
-                const btn = document.querySelector(`[data-id="${currentMusicData.id}"].chart-play-btn, [data-id="${currentMusicData.id}"].music-play-btn`);
-                if (btn) btn.textContent = '⏸';
+
+        // 볼륨 슬라이더 휠 이벤트
+        const volumeSlider = document.getElementById('volume-slider');
+        volumeSlider.addEventListener('input', function() {
+            const volume = this.value / 100;  // 0-100을 0-1로 변환
+            audio.volume = volume;
+            console.log('Slider changed:', volume);  // 🔥 디버깅
+            updateVolumeIcon();
+        });
+
+        // 키보드로 볼륨 조절 시 슬라이더도 업데이트
+        window.addEventListener('keydown', function(e) {
+            // 입력 중이면 무시
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(e.code) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    // 볼륨 10% 증가
+                    let newVolUp = Math.min(1, audio.volume + 0.1);
+                    audio.volume = newVolUp;
+                    volumeSlider.value = newVolUp * 100;
+                    updateVolumeIcon(newVolUp * 100);
+                    break;
+
+                case 'ArrowDown':
+                    e.preventDefault();
+                    // 볼륨 10% 감소
+                    let newVolDown = Math.max(0, audio.volume - 0.1);
+                    audio.volume = newVolDown;
+                    volumeSlider.value = newVolDown * 100;
+                    updateVolumeIcon(newVolDown * 100);
+                    break;
+
+                case 'Space':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (audio.src) {
+                        audio.currentTime = Math.max(0, audio.currentTime - 5);
+                    }
+                    break;
+
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (audio.src) {
+                        audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+                    }
+                    break;
+
+                case 'KeyM':
+                    e.preventDefault();
+                    toggleMute();
+                    break;
             }
         });
 
-        audio.addEventListener('pause', function() {
-            if (currentMusicData) {
-                const btn = document.querySelector(`[data-id="${currentMusicData.id}"].chart-play-btn, [data-id="${currentMusicData.id}"].music-play-btn`);
-                if (btn) btn.textContent = '▶';
-            }
-        });
-        
         // 마우스 휠로 볼륨 조절
-        document.getElementById('volume-slider').addEventListener('wheel', function(e) {
+        volumeSlider.addEventListener('wheel', function(e) {
             e.preventDefault();
 
-            let currentVolume = parseInt(this.value);
+            let delta = e.deltaY > 0 ? -5 : 5;  // 5% 단위
+            let newValue = Math.max(0, Math.min(100, parseInt(this.value) + delta));
 
-            if (e.deltaY < 0) {
-                // 휠 위로 → 볼륨 업
-                currentVolume = Math.min(100, currentVolume + 5);
-            } else {
-                // 휠 아래로 → 볼륨 다운
-                currentVolume = Math.max(0, currentVolume - 5);
+            this.value = newValue;
+            audio.volume = newValue / 100;
+            updateVolumeIcon(newValue);
+        });
+
+        // 플레이어 영역에서 휠로 볼륨 조절
+        document.getElementById('bottom-player').addEventListener('wheel', function(e) {
+            // 프로그레스 바 위에서는 무시
+            if (e.target.closest('.progress-bar') || e.target.closest('.progress-container')) {
+                return;
             }
+            
+            e.preventDefault();
 
-            this.value = currentVolume;
-            changeVolume(currentVolume);
+            let delta = e.deltaY > 0 ? -5 : 5;
+            let currentValue = parseInt(volumeSlider.value);
+            let newValue = Math.max(0, Math.min(100, currentValue + delta));
+
+            volumeSlider.value = newValue;
+            audio.volume = newValue / 100;
+            updateVolumeIcon(newValue);
         });
 
     </script>
