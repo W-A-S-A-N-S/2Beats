@@ -20,7 +20,7 @@
 
     .player-content {
         max-width: 1000px; margin: 0 auto;
-        display: grid; grid-template-columns: 200px 1fr 150px;
+        display: grid; grid-template-columns: 200px 1fr 150px; /* [수정] 우측 볼륨 공간 확보 */
         gap: 2rem; align-items: center;
     }
 
@@ -56,6 +56,26 @@
         position: absolute; top: 0; left: 0;
     }
 
+    /* [추가] 볼륨 컨트롤 스타일 */
+    .player-volume {
+        display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    }
+    .volume-slider {
+        width: 80px; height: 4px;
+        -webkit-appearance: none; appearance: none;
+        background: rgba(255,255,255,0.2);
+        border-radius: 2px; cursor: pointer; outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 12px; height: 12px; background: #c084fc;
+        border-radius: 50%; cursor: pointer;
+    }
+    .volume-slider::-moz-range-thumb {
+        width: 12px; height: 12px; background: #c084fc;
+        border-radius: 50%; cursor: pointer; border: none;
+    }
+
     /* 전체 재생 버튼 */
     .btn-play-all {
         display: inline-flex; align-items: center; gap: 8px;
@@ -70,7 +90,7 @@
         box-shadow: 0 6px 20px rgba(124,58,237,0.4);
     }
 
-    /* 리스트 내 재생 버튼 (작게) */
+    /* 리스트 내 재생 버튼 */
     .btn-list-play {
         width: 32px; height: 32px; border-radius: 50%;
         background: rgba(192,132,252,0.1); color: #c084fc;
@@ -85,7 +105,8 @@
 
     @media (max-width: 768px) {
         .player-content { grid-template-columns: 1fr auto; gap: 1rem; }
-        .player-controls { display: none; } /* 모바일 간소화 */
+        .player-controls { display: none; }
+        .player-volume { display: none; } /* 모바일에서 볼륨 숨김 */
     }
 </style>
 {% endblock %}
@@ -204,15 +225,18 @@
             </div>
         </div>
 
-        <div style="text-align:right;">
-            </div>
+        <div class="player-volume">
+            <button class="btn-control" id="lp-mute-btn" onclick="toggleMute()" title="음소거">🔊</button>
+            <input type="range" class="volume-slider" id="lp-volume" 
+                   min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+        </div>
     </div>
   </div>
   
   <audio id="lp-audio"></audio>
 
   <script>
-    // 1. 플레이리스트 데이터 구성 (Django Template -> JS Array)
+    // 1. 플레이리스트 데이터 구성
     const playlistData = [
       {% for item in items %}
         {% if is_music and item.music.music_root %}
@@ -229,6 +253,7 @@
 
     let currentIndex = -1;
     let isPlaying = false;
+    let lastVolume = 1; // 음소거 해제 시 이전 볼륨 기억용
 
     const audio = document.getElementById('lp-audio');
     const player = document.getElementById('local-player');
@@ -241,8 +266,12 @@
     const progressBar = document.getElementById('lp-progress-bar');
     const currTimeEl = document.getElementById('lp-current');
     const durTimeEl = document.getElementById('lp-duration');
+    
+    // [추가] 볼륨 엘리먼트
+    const volSlider = document.getElementById('lp-volume');
+    const muteBtn = document.getElementById('lp-mute-btn');
 
-    // 2. 전체 재생 (첫 곡부터 시작)
+    // 2. 전체 재생
     function playAll() {
         if (playlistData.length > 0) {
             playTrack(0);
@@ -251,7 +280,7 @@
         }
     }
 
-    // 3. 특정 트랙 재생
+    // 3. 특정 트랙 재생 (기존 로직 유지)
     function playTrack(index) {
         if (index < 0 || index >= playlistData.length) return;
 
@@ -271,7 +300,7 @@
             thumbDefEl.style.display = 'flex';
         }
 
-        // 테이블 하이라이트 처리
+        // 테이블 하이라이트
         document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('playing-row'));
         const row = document.getElementById(`track-row-${track.index}`);
         if(row) row.classList.add('playing-row');
@@ -279,6 +308,9 @@
         // 플레이어 표시 및 재생
         player.classList.add('active');
         audio.src = track.url;
+        // 볼륨 초기화 (기존 값 유지)
+        audio.volume = volSlider.value;
+        
         audio.play()
             .then(() => {
                 isPlaying = true;
@@ -287,37 +319,31 @@
             .catch(err => console.log("재생 오류:", err));
     }
 
-    // 4. 다음 곡 / 이전 곡
+    // 4. 다음/이전
     function playNext() {
         if (currentIndex < playlistData.length - 1) {
             playTrack(currentIndex + 1);
         } else {
-            // 마지막 곡이면 정지 or 처음으로? (여기선 정지)
             isPlaying = false;
             updatePlayButton();
         }
     }
 
     function playPrev() {
-        // 재생 시간이 3초 이상 지났으면 곡의 처음으로
         if (audio.currentTime > 3) {
             audio.currentTime = 0;
             return;
         }
-        // 아니면 이전 곡으로
         if (currentIndex > 0) {
             playTrack(currentIndex - 1);
         }
     }
 
-    // 5. 오디오 이벤트 리스너
-    
-    // 곡이 끝나면 자동으로 다음 곡 재생 (순차 재생 핵심)
+    // 5. 오디오 이벤트
     audio.addEventListener('ended', () => {
         playNext();
     });
 
-    // 재생/일시정지 토글
     function togglePlay() {
         if (audio.paused) {
             audio.play();
@@ -333,7 +359,6 @@
         playBtn.textContent = isPlaying ? '⏸' : '▶';
     }
 
-    // 진행바 업데이트
     audio.addEventListener('timeupdate', () => {
         if (audio.duration) {
             const percent = (audio.currentTime / audio.duration) * 100;
@@ -343,7 +368,6 @@
         }
     });
 
-    // 탐색 (Seek)
     function seek(e) {
         if (!audio.duration) return;
         const width = progressBar.clientWidth;
@@ -352,11 +376,35 @@
         audio.currentTime = (clickX / width) * duration;
     }
 
-    // 시간 포맷
     function formatTime(s) {
         const min = Math.floor(s / 60);
         const sec = Math.floor(s % 60);
         return min + ':' + (sec < 10 ? '0' + sec : sec);
+    }
+
+    // 6. [추가] 볼륨 제어 로직
+    function setVolume(val) {
+        audio.volume = val;
+        updateVolumeIcon(val);
+    }
+
+    function toggleMute() {
+        if (audio.volume > 0) {
+            lastVolume = audio.volume; // 현재 볼륨 기억
+            audio.volume = 0;
+            volSlider.value = 0;
+        } else {
+            // 복구
+            audio.volume = lastVolume > 0 ? lastVolume : 0.5;
+            volSlider.value = audio.volume;
+        }
+        updateVolumeIcon(audio.volume);
+    }
+
+    function updateVolumeIcon(val) {
+        if (val == 0) muteBtn.textContent = '🔇';
+        else if (val < 0.5) muteBtn.textContent = '🔉';
+        else muteBtn.textContent = '🔊';
     }
   </script>
 {% endblock %}
