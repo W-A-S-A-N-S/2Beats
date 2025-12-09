@@ -494,20 +494,21 @@
         <div class="player-content">
             <div class="player-info">
                 <div id="player-thumbnail" class="player-thumbnail">🎵</div>
-                <a href="#" id="player-link" class="player-text-link">
+                <a href="javascript:void(0)" id="player-link" class="player-text-link">
                 <div class="player-text">
                     <h4 id="player-title">음악을 선택하세요</h4>
                     <p id="player-artist">-</p>
                 </div>
+                </a>
             </div>
             
             <div class="player-controls">
                 <div class="control-buttons">
-                    <button class="control-btn" id="shuffle-btn" onclick="toggleShuffle()" title="셔플">🔀</button>
-                    <button class="control-btn" onclick="previousTrack()">⏮️</button>
-                    <button class="control-btn play-btn" id="play-pause-btn" onclick="togglePlay()">▶️</button>
-                    <button class="control-btn" onclick="nextTrack()">⏭️</button>
-                    <button class="control-btn" id="repeat-btn" onclick="toggleRepeat()" title="반복">🔁</button>
+                    <button type="button" class="control-btn" id="shuffle-btn" onclick="toggleShuffle()" title="셔플">🔀</button>
+                    <button type="button" class="control-btn" onclick="previousTrack()">⏮️</button>
+                    <button type="button" class="control-btn play-btn" id="play-pause-btn" onclick="togglePlay()">▶️</button>
+                    <button type="button" class="control-btn" onclick="nextTrack()">⏭️</button>
+                    <button type="button" class="control-btn" id="repeat-btn" onclick="toggleRepeat()" title="반복">🔁</button>
                 </div>
                 <div class="progress-container">
                     <span class="time" id="current-time">0:00</span>
@@ -519,12 +520,12 @@
             </div>
             
             <div class="player-actions">
-                <button class="control-btn" id="like-btn-player" onclick="toggleLikePlayer()" title="좋아요">🤍</button>
-                <button class="control-btn" onclick="addToPlaylist()" title="플레이리스트에 추가">📋</button>
+                <button type="button" class="control-btn" id="like-btn-player" onclick="toggleLikePlayer()" title="좋아요">🤍</button>
+                <button type="button" class="control-btn" onclick="addToPlaylist()" title="플레이리스트에 추가">📋</button>
                 <div class="volume-control">
-                    <button class="control-btn" id="volume-icon" onclick="toggleMute()" style="font-size: 1.1rem;">🔊</button>
-                    <input type="range" min="0" max="100" value="100" 
-                           class="volume-slider" id="volume-slider" 
+                    <button type="button" class="control-btn" id="volume-icon" onclick="toggleMute()" style="font-size: 1.1rem;">🔊</button>
+                    <input type="range" min="0" max="100" value="100"
+                           class="volume-slider" id="volume-slider"
                            oninput="changeVolume(this.value)">
                 </div>
             </div>
