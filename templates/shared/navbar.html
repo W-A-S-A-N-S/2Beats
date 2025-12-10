@@ -412,8 +412,14 @@
 
                     <!-- 유저 프로필 버튼 (아바타 + 이름) -->
                     <a href="{% url 'profile' %}" class="navbar-user">
-                        <!-- 유저 이름의 첫 글자를 대문자로 표시 -->
-                        <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                        {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" 
+                                alt="{{ user.username }}" 
+                                class="user-avatar"
+                                style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                        {% else %}
+                            <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                        {% endif %}
                         <span>{{ user.username }}</span>
                     </a>
 
