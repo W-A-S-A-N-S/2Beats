@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}월드컵 결과 | 2Beats{% endblock %}
+
 {% block extra_head %}
 <style>
   .res-shell { max-width: 900px; margin: 0 auto; text-align: center; }
@@ -13,6 +14,7 @@
     font-family: "Space Grotesk", "Pretendard", "Noto Sans KR", sans-serif;
   }
   .res-shell p { margin: 0; color: var(--muted); }
+  
   .winner-card {
     max-width: 420px;
     margin: 22px auto;
@@ -23,9 +25,23 @@
     box-shadow: 0 22px 70px rgba(0,0,0,0.55);
   }
   .winner-card img { width: 100%; height: 260px; object-fit: cover; }
+  
   .winner-info { padding: 16px; }
   .winner-info h2 { margin: 0 0 6px; color: var(--text); }
   .winner-info p { margin: 0; color: var(--muted); }
+
+  /* 링크 스타일: 밑줄 없애고 마우스 올리면 색상 변경 */
+  .music-link {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s;
+    cursor: pointer;
+  }
+  .music-link:hover {
+    color: #c084fc;
+    text-decoration: underline;
+  }
+
   .history-list {
     margin-top: 16px;
     border-top: 1px solid var(--border);
@@ -57,13 +73,23 @@
   <div class="card">
     <div class="winner-card">
       {% if winner.wc_music.music_thumbnail %}
-        <img src="{{ winner.wc_music.music_thumbnail.url }}" alt="winner">
+        <a href="{% url 'music_explore:detail' winner.wc_music.id %}">
+            <img src="{{ winner.wc_music.music_thumbnail.url }}" 
+                 alt="winner"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x260?text=No+Image';">
+        </a>
       {% else %}
-        <img src="https://via.placeholder.com/400x260?text=No+Image" alt="winner">
+        <a href="{% url 'music_explore:detail' winner.wc_music.id %}">
+            <img src="https://via.placeholder.com/400x260?text=No+Image" alt="winner">
+        </a>
       {% endif %}
       
       <div class="winner-info">
-        <h2>{{ winner.wc_music.music_title }}</h2>
+        <h2>
+            <a href="{% url 'music_explore:detail' winner.wc_music.id %}" class="music-link">
+                {{ winner.wc_music.music_title }}
+            </a>
+        </h2>
         <p>{{ winner.wc_music.music_singer }}</p>
       </div>
     </div>
@@ -73,7 +99,11 @@
         {% for r in others %}
         <div class="history-item">
           <div>
-            <div class="title">{{ r.wc_music.music_title }}</div>
+            <div class="title">
+                <a href="{% url 'music_explore:detail' r.wc_music.id %}" class="music-link">
+                    {{ r.wc_music.music_title }}
+                </a>
+            </div>
             <div class="meta">{{ r.wc_music.music_singer }}</div>
           </div>
           <div class="meta">순위: {{ r.wc_final_rank }}</div>
