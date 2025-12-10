@@ -1,122 +1,13 @@
-{% extends "base.html" %}
+{% extends "music_explore/base.html" %}
 {% block title %}플레이리스트 | 2beats{% endblock %}
 
-{% block extra_head %}
+{% block extra_css %}
 <style>
-    /* === 하단 플레이어 스타일 (제공해주신 디자인 적용) === */
-    #bottom-player {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        background: #fff;
-        color: #333;
-        padding: 0.8rem 2rem;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-        display: none;
-        z-index: 1000;
-        border-top: 1px solid #eee;
-    }
-    
-    #bottom-player.active { display: block; }
-    
-    .player-content {
-        max-width: 1200px; margin: 0 auto;
-        display: grid; grid-template-columns: 280px 1fr 200px;
-        gap: 2rem; align-items: center;
-    }
-    
-    .player-info { display: flex; gap: 1rem; align-items: center; }
-    
-    .player-thumbnail {
-        width: 56px; height: 56px; border-radius: 8px; object-fit: cover;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .player-text h4 { margin-bottom: 0.2rem; font-size: 0.95rem; font-weight: 600; color: #333; }
-    .player-text p { color: #888; font-size: 0.85rem; }
-    
-    .player-controls { display: flex; flex-direction: column; gap: 0.4rem; }
-    
-    .control-buttons { display: flex; justify-content: center; gap: 0.8rem; align-items: center; }
-    
-    .control-btn {
-        background: none; border: none; color: #666; font-size: 1.3rem;
-        cursor: pointer; transition: all 0.2s; padding: 0.4rem; border-radius: 50%;
-    }
-    .control-btn:hover { color: #1db954; background-color: rgba(29, 185, 84, 0.1); }
-    .control-btn.active { color: #1db954; }
-    
-    .control-btn.shuffle-off { position: relative; opacity: 0.5; }
-    
-    .play-btn { font-size: 2.2rem; color: #1db954; }
-    .play-btn:hover { transform: scale(1.05); }
-    
-    .progress-container { display: flex; align-items: center; gap: 0.5rem; }
-    .time { font-size: 0.75rem; color: #999; min-width: 36px; font-weight: 500; }
-    
-    .progress-bar {
-        flex: 1; height: 4px; background: #e8e8e8;
-        border-radius: 2px; cursor: pointer; position: relative;
-    }
-    .progress-bar:hover { height: 6px; }
-    
-    .progress {
-        height: 100%; background: linear-gradient(90deg, #1db954, #1ed760);
-        border-radius: 2px; width: 0%; position: relative;
-    }
-    .progress::after {
-        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
-        width: 10px; height: 10px; background: #1db954; border-radius: 50%;
-        opacity: 0; transition: opacity 0.2s; box-shadow: 0 1px 4px rgba(29, 185, 84, 0.4);
-    }
-    .progress-bar:hover .progress::after { opacity: 1; }
-    
-    .player-actions { display: flex; justify-content: flex-end; gap: 0.3rem; align-items: center; }
-    
-    .volume-control { display: flex; align-items: center; gap: 0.4rem; }
-    .volume-slider { width: 70px; cursor: pointer; accent-color: #1db954; }
-
-    /* 다크 모드 오버라이드 (제공해주신 CSS 반영) */
-    :root {
-        --bg: #090712; --card: #120f1f; --accent: #c084fc; --accent-2: #7c3aed;
-        --text: #f7f8ff; --muted: #c7c9d9; --border: #1f1b2d;
-    }
-    body {
-        background: radial-gradient(circle at 15% 20%, rgba(124,58,237,0.16), transparent 40%),
-                    radial-gradient(circle at 80% 0%, rgba(192,132,252,0.12), transparent 45%),
-                    linear-gradient(160deg, #090712, #0e0a19 60%, #0a0814);
-        color: var(--text);
-        padding-bottom: 100px !important; /* 플레이어 공간 확보 */
-    }
-    .card {
-        background: linear-gradient(140deg, rgba(124,58,237,0.12), rgba(192,132,252,0.12), var(--card));
-        border: 1px solid var(--border);
-        box-shadow: 0 22px 70px rgba(0,0,0,0.45);
-    }
-    #bottom-player {
-        background: var(--card); color: var(--text);
-        border-top: 1px solid var(--border);
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
-    }
-    .player-text h4 { color: var(--text); }
-    .player-text-link { text-decoration: none; color: inherit; transition: opacity 0.2s; }
-    .player-text-link:hover { opacity: 0.8; }
-    .player-text-link:hover h4 { color: #1db954; }
-    .control-btn { color: var(--muted); }
-    .control-btn:hover { color: var(--accent); background-color: rgba(192,132,252, 0.1); }
-    .control-btn.active { color: var(--accent); }
-    .play-btn { color: var(--accent); }
-    .progress-bar { background: rgba(255,255,255,0.1); }
-    .progress { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-    .progress::after { background: var(--accent); }
-    .volume-slider { accent-color: var(--accent); }
-
-    /* 리스트 및 버튼 스타일 */
+    /* 리스트 및 버튼 스타일만 남김 */
     .btn-play-all {
         display: inline-flex; align-items: center; gap: 8px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        color: #0b1220; border: none; padding: 10px 20px;
+        background: linear-gradient(135deg, #c084fc, #7c3aed);
+        color: white; border: none; padding: 10px 20px;
         border-radius: 24px; font-weight: 700; cursor: pointer;
         transition: transform 0.2s, box-shadow 0.2s;
         box-shadow: 0 4px 15px rgba(124,58,237,0.3);
@@ -125,25 +16,19 @@
     
     .btn-list-play {
         width: 32px; height: 32px; border-radius: 50%;
-        background: rgba(192,132,252,0.15); color: var(--accent);
+        background: rgba(192,132,252,0.15); color: #c084fc;
         border: 1px solid rgba(192,132,252,0.3);
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.2s; padding-left: 3px;
     }
-    .btn-list-play:hover { background: var(--accent); color: #0b1220; }
-    .playing-row { background: rgba(192,132,252,0.15) !important; }
+    .btn-list-play:hover { background: #c084fc; color: #0b1220; }
     
-    @media (max-width: 768px) {
-        .player-content { grid-template-columns: 1fr auto; gap: 1rem; }
-        .player-controls { display: none; }
-    }
+    /* 재생 중인 행 강조 */
+    .playing-row { background: rgba(192,132,252,0.15) !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div></div>
-<div class="toast-container" id="toast-container"></div>
-
 <div style="margin-bottom:10px;">
     <a class="muted" href="{% url 'mylist' %}?tab={{ kind }}">← 마이 리스트로</a>
 </div>
@@ -158,7 +43,7 @@
         
         {% if is_music and items %}
         <div>
-            <button class="btn-play-all" onclick="playAll()">
+            <button class="btn-play-all" onclick="playAllItems()">
                 <span style="font-size:1.1rem;">▶</span> 전체 재생
             </button>
         </div>
@@ -189,10 +74,10 @@
             </thead>
             <tbody>
                 {% for item in items %}
-                <tr id="track-row-{{ forloop.counter0 }}">
-                    <td style="text-align:center;">
+                <tr id="track-row-{{ item.music.id }}"> <td style="text-align:center;">
                         {% if is_music and item.music.music_root %}
-                        <button type="button" class="btn-list-play" onclick="playTrack({{ forloop.counter0 }})">▶</button>
+                        <button type="button" class="btn-list-play" 
+                                onclick="playSpecificItem({{ forloop.counter0 }})">▶</button>
                         {% endif %}
                     </td>
                     <td>
@@ -229,334 +114,72 @@
     {% endif %}
 </div>
 
-<div id="bottom-player">
-    <div class="player-content">
-        <div class="player-info">
-            <div id="player-thumbnail" class="player-thumbnail">🎵</div>
-            <a href="javascript:void(0)" id="player-link" class="player-text-link">
-                <div class="player-text">
-                    <h4 id="player-title">음악을 선택하세요</h4>
-                    <p id="player-artist">-</p>
-                </div>
-            </a>
-        </div>
-        
-        <div class="player-controls">
-            <div class="control-buttons">
-                <button type="button" class="control-btn" id="shuffle-btn" onclick="toggleShuffle()" title="셔플">🔀</button>
-                <button type="button" class="control-btn" onclick="playPrev()">⏮️</button>
-                <button type="button" class="control-btn play-btn" id="play-pause-btn" onclick="togglePlay()">▶️</button>
-                <button type="button" class="control-btn" onclick="playNext()">⏭️</button>
-                <button type="button" class="control-btn" id="repeat-btn" onclick="toggleRepeat()" title="반복">🔁</button>
-            </div>
-            <div class="progress-container">
-                <span class="time" id="current-time">0:00</span>
-                <div class="progress-bar" id="progress-bar">
-                    <div class="progress" id="progress"></div>
-                </div>
-                <span class="time" id="duration">0:00</span>
-            </div>
-        </div>
-        
-        <div class="player-actions">
-            <button type="button" class="control-btn" id="like-btn-player" onclick="toggleLikePlayer()" title="좋아요">🤍</button>
-            <div class="volume-control">
-                <button type="button" class="control-btn" id="volume-icon" onclick="toggleMute()" style="font-size: 1.1rem;">🔊</button>
-                <input type="range" min="0" max="100" value="100" 
-                       class="volume-slider" id="volume-slider" 
-                       oninput="changeVolume(this.value)">
-            </div>
-        </div>
-    </div>
-</div>
+{% endblock %}
 
-<audio id="global-audio"></audio>
-
+{% block extra_js %}
 <script>
-    // ===== 유틸리티 함수 =====
-    function showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.innerHTML = `<span>${type === 'success' ? '✓' : 'ℹ️'}</span><span>${message}</span>`;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-    
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // ===== 플레이어 로직 =====
-    
-    // 1. 플레이리스트 데이터 구성
-    const playlistData = [
+    // 1. 현재 페이지의 플레이리스트 데이터를 JS 배열로 변환
+    // (부모 템플릿의 전역 'playlist' 변수를 덮어쓰기 위함)
+    const currentListItems = [
       {% for item in items %}
         {% if is_music and item.music.music_root %}
         {
-            index: {{ forloop.counter0 }},
             id: {{ item.music.id }},
             title: "{{ item.music.music_title|escapejs }}",
             artist: "{{ item.music.music_singer|escapejs }}",
             url: "{{ item.music.music_root.url }}",
-            thumb: "{% if item.music.music_thumbnail %}{{ item.music.music_thumbnail.url }}{% endif %}"
+            thumbnail: "{% if item.music.music_thumbnail %}{{ item.music.music_thumbnail.url }}{% endif %}"
         },
         {% endif %}
       {% endfor %}
     ];
 
-    let currentMusicData = null;
-    let currentIndex = -1;
-    let isShuffled = false;
-    let repeatMode = 0; // 0: off, 1: all, 2: one
-    let previousVolume = 100;
-    
-    const audio = document.getElementById('global-audio');
-    const player = document.getElementById('bottom-player');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const progress = document.getElementById('progress');
-    const progressBar = document.getElementById('progress-bar');
-    const currentTimeEl = document.getElementById('current-time');
-    const durationEl = document.getElementById('duration');
-    let isDragging = false;
-
-    // 초기화
-    document.addEventListener('DOMContentLoaded', function() {
-        const savedVolume = localStorage.getItem('volume');
-        if (savedVolume) {
-            const vol = parseFloat(savedVolume) * 100;
-            document.getElementById('volume-slider').value = vol;
-            updateVolumeIcon(vol);
-            audio.volume = parseFloat(savedVolume);
-        }
-    });
-
-    // 2. 전체 재생
-    function playAll() {
-        if (playlistData.length > 0) {
-            playTrack(0);
-        } else {
-            showToast("재생할 곡이 없습니다.", 'error');
-        }
-    }
-
-    // 3. 트랙 재생
-    function playTrack(index) {
-        if (index < 0 || index >= playlistData.length) return;
-
-        currentIndex = index;
-        const track = playlistData[index];
-        currentMusicData = track;
-
-        // UI 업데이트
-        document.getElementById('player-title').textContent = track.title;
-        document.getElementById('player-artist').textContent = track.artist;
-        
-        const thumbnailEl = document.getElementById('player-thumbnail');
-        if (track.thumb) {
-            thumbnailEl.innerHTML = `<img src="${track.thumb}" style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover;">`;
-        } else {
-            thumbnailEl.innerHTML = '🎵';
-        }
-        
-        // 상세 페이지 링크 업데이트
-        document.getElementById('player-link').href = `/music/detail/${track.id}/`;
-
-        // 리스트 하이라이트
-        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('playing-row'));
-        const row = document.getElementById(`track-row-${track.index}`);
-        if(row) row.classList.add('playing-row');
-
-        // 재생
-        audio.src = track.url;
-        audio.play().then(() => {
-            playPauseBtn.textContent = '⏸️';
-            player.classList.add('active');
-            updateLikeStatus(track.id);
-        }).catch(err => console.error("재생 오류:", err));
-    }
-
-    // 4. 다음/이전/종료 처리
-    function playNext() {
-        if (playlistData.length === 0) return;
-
-        let nextIndex;
-        if (isShuffled) {
-            nextIndex = Math.floor(Math.random() * playlistData.length);
-        } else {
-            nextIndex = currentIndex + 1;
-            if (nextIndex >= playlistData.length) {
-                if (repeatMode === 1) nextIndex = 0; // 전체 반복
-                else return; // 끝
-            }
-        }
-        playTrack(nextIndex);
-    }
-
-    function playPrev() {
-        if (audio.currentTime > 3) {
-            audio.currentTime = 0;
+    // 2. 전체 재생 함수
+    function playAllItems() {
+        if (currentListItems.length === 0) {
+            alert("재생할 곡이 없습니다.");
             return;
         }
-        let prevIndex = currentIndex - 1;
-        if (prevIndex < 0) prevIndex = playlistData.length - 1;
-        playTrack(prevIndex);
+        
+        // 부모 템플릿(base.html)의 전역 변수 업데이트
+        playlist = currentListItems; 
+        currentIndex = 0;
+        isShuffled = false; // 전체 재생 시 셔플 초기화 (선택사항)
+
+        // 첫 곡 재생 (부모 템플릿의 playMusic 함수 호출)
+        const track = playlist[0];
+        playMusic(track.id, track.title, track.artist, track.url, track.thumbnail);
+        
+        // UI 하이라이트 업데이트
+        updateActiveRow(track.id);
     }
 
-    audio.addEventListener('ended', function() {
-        if (repeatMode === 2) {
-            audio.currentTime = 0;
-            audio.play();
-        } else {
-            playNext();
-        }
-    });
+    // 3. 개별 곡 재생 함수 (리스트 컨텍스트 유지)
+    function playSpecificItem(index) {
+        if (index < 0 || index >= currentListItems.length) return;
 
-    // 5. 컨트롤 기능 (재생/일시정지, 셔플, 반복)
-    function togglePlay() {
-        if (audio.paused) {
-            audio.play();
-            playPauseBtn.textContent = '⏸️';
-        } else {
-            audio.pause();
-            playPauseBtn.textContent = '▶️';
-        }
+        // 부모 템플릿의 플레이리스트를 현재 리스트로 교체
+        playlist = currentListItems;
+        currentIndex = index;
+
+        const track = playlist[index];
+        playMusic(track.id, track.title, track.artist, track.url, track.thumbnail);
+        
+        updateActiveRow(track.id);
     }
 
-    function toggleShuffle() {
-        isShuffled = !isShuffled;
-        const btn = document.getElementById('shuffle-btn');
-        if (isShuffled) {
-            btn.classList.add('active');
-            btn.classList.remove('shuffle-off');
-        } else {
-            btn.classList.remove('active');
-            btn.classList.add('shuffle-off');
-        }
+    // 4. 현재 재생 중인 곡 하이라이트 표시
+    function updateActiveRow(musicId) {
+        // 모든 row 스타일 초기화
+        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('playing-row'));
+        
+        // 현재 곡 row 찾아서 강조
+        const row = document.getElementById(`track-row-${musicId}`);
+        if(row) row.classList.add('playing-row');
     }
 
-    function toggleRepeat() {
-        repeatMode = (repeatMode + 1) % 3;
-        const btn = document.getElementById('repeat-btn');
-        switch(repeatMode) {
-            case 0: btn.textContent = '🔁'; btn.classList.remove('active'); break;
-            case 1: btn.textContent = '🔁'; btn.classList.add('active'); break;
-            case 2: btn.textContent = '🔂'; btn.classList.add('active'); break;
-        }
-    }
-
-    // 6. 볼륨 및 진행바
-    function changeVolume(value) {
-        audio.volume = value / 100;
-        localStorage.setItem('volume', value / 100);
-        updateVolumeIcon(value);
-    }
-
-    function updateVolumeIcon(value) {
-        const icon = document.getElementById('volume-icon');
-        if (value == 0) icon.textContent = '🔇';
-        else if (value < 30) icon.textContent = '🔈';
-        else if (value < 70) icon.textContent = '🔉';
-        else icon.textContent = '🔊';
-    }
-
-    function toggleMute() {
-        const slider = document.getElementById('volume-slider');
-        if (audio.volume > 0) {
-            previousVolume = slider.value;
-            slider.value = 0;
-            changeVolume(0);
-        } else {
-            slider.value = previousVolume;
-            changeVolume(previousVolume);
-        }
-    }
-
-    // 진행바 드래그 및 업데이트
-    audio.addEventListener('timeupdate', () => {
-        if (!isDragging && audio.duration) {
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progress.style.width = percent + '%';
-            currentTimeEl.textContent = formatTime(audio.currentTime);
-            durationEl.textContent = formatTime(audio.duration);
-        }
-    });
-
-    function setProgress(e) {
-        const rect = progressBar.getBoundingClientRect();
-        const pos = (e.clientX - rect.left) / rect.width;
-        audio.currentTime = Math.max(0, Math.min(1, pos)) * audio.duration;
-    }
-
-    progressBar.addEventListener('mousedown', (e) => { isDragging = true; setProgress(e); });
-    document.addEventListener('mousemove', (e) => { if(isDragging) setProgress(e); });
-    document.addEventListener('mouseup', () => { isDragging = false; });
-
-    function formatTime(s) {
-        if (isNaN(s)) return '0:00';
-        const m = Math.floor(s / 60);
-        const sec = Math.floor(s % 60);
-        return m + ':' + (sec < 10 ? '0' : '') + sec;
-    }
-
-    // 7. 좋아요 기능 연동
-    function updateLikeStatus(musicId) {
-        {% if user.is_authenticated %}
-        fetch('/music/like-status/' + musicId + '/')
-            .then(res => res.json())
-            .then(data => {
-                const btn = document.getElementById('like-btn-player');
-                if (data.is_liked) {
-                    btn.textContent = '❤️';
-                    btn.style.color = '#1db954';
-                } else {
-                    btn.textContent = '🤍';
-                    btn.style.color = '#666';
-                }
-            });
-        {% endif %}
-    }
-
-    function toggleLikePlayer() {
-        if (!currentMusicData) return;
-        {% if user.is_authenticated %}
-        fetch('/music/like/' + currentMusicData.id + '/', {
-            method: 'POST',
-            headers: {'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'}
-        })
-        .then(res => res.json())
-        .then(data => {
-            const btn = document.getElementById('like-btn-player');
-            if (data.is_liked) {
-                btn.textContent = '❤️';
-                btn.style.color = '#1db954';
-                showToast('좋아요 추가', 'success');
-            } else {
-                btn.textContent = '🤍';
-                btn.style.color = '#666';
-                showToast('좋아요 취소', 'info');
-            }
-        });
-        {% else %}
-        showToast('로그인이 필요합니다.', 'error');
-        {% endif %}
-    }
-    
-    // 키보드 단축키
-    document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT') return;
-        if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-    });
+    // (옵션) 부모 템플릿의 playMusic 함수가 호출될 때마다 하이라이트 갱신하고 싶다면
+    // MutationObserver나 CustomEvent를 써야 하지만, 
+    // 여기서는 버튼 클릭 시점에만 갱신하도록 간단히 처리했습니다.
 </script>
 {% endblock %}
