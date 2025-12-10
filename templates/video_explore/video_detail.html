@@ -400,18 +400,6 @@
                 </button>
                 {% endif %}
 
-                {% if video.video_root %}
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'video_explore:download_video' video.pk %}" class="action-btn" style="text-decoration: none; color: inherit;">
-                        📥 다운로드
-                    </a>
-                    {% else %}
-                    <button class="action-btn" onclick="alert('로그인이 필요합니다.')">
-                        📥 다운로드
-                    </button>
-                    {% endif %}
-                {% endif %}
-
                 {% if user.is_authenticated %}
                 <button class="action-btn" onclick="addToPlaylistFromDetail()">
                     ➕ 플레이리스트에 추가
