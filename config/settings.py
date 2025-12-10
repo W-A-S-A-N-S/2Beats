@@ -174,3 +174,5 @@ AUTH_USER_MODEL = 'twobeats_account.User'
 LOGIN_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/home/'
 LOGOUT_REDIRECT_URL = '/account/login/'
+
+AWS_DEFAULT_ACL = None
