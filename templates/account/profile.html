@@ -1,11 +1,126 @@
 {% extends "base.html" %}
 {% block title %}마이페이지 | 2beats{% endblock %}
 {% block extra_head %}
+  <style>
+    .profile-file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .profile-image-controls {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .profile-upload-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed var(--border);
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      min-width: 240px;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .profile-upload-chip:hover {
+      border-color: var(--accent);
+      background: rgba(124,58,237,0.08);
+      transform: translateY(-1px);
+    }
+    .profile-upload-chip .chip-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(124,58,237,0.18);
+    }
+    .profile-upload-chip .chip-title {
+      font-weight: 700;
+    }
+    .profile-upload-chip .chip-desc {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .profile-clear-tile {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #0c0a18;
+      cursor: pointer;
+      min-width: 260px;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .profile-clear-tile:hover {
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.03);
+      transform: translateY(-1px);
+    }
+    .profile-clear-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .clear-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      background: rgba(255,255,255,0.02);
+      transition: all 0.15s ease;
+    }
+    .clear-checkbox span {
+      display: none;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .profile-clear-input:checked + .clear-checkbox {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      box-shadow: 0 10px 28px rgba(124,58,237,0.28);
+      transform: translateY(-1px);
+    }
+    .profile-clear-input:checked + .clear-checkbox span {
+      display: block;
+    }
+    .profile-clear-copy .title {
+      font-weight: 700;
+    }
+    .profile-clear-copy .desc {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('{{ form.profile_image.id_for_label }}');
     const preview = document.getElementById('preview-avatar');
     const current = document.getElementById('current-avatar');
+    const clearInput = document.getElementById('{{ form.profile_image.id_for_label }}-clear');
 
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
@@ -19,6 +134,17 @@
         preview.src = url;
         preview.style.display = 'block';
         if (current) current.style.opacity = 0.4;
+      });
+    }
+    if (clearInput) {
+      clearInput.addEventListener('change', () => {
+        if (clearInput.checked) {
+          if (fileInput) fileInput.value = '';
+          if (preview) preview.style.display = 'none';
+          if (current) current.style.opacity = 0.35;
+          return;
+        }
+        if (current) current.style.opacity = 1;
       });
     }
     // 2. 전화번호 숫자만 입력 가능하도록 제한 (추가된 코드)
@@ -101,7 +227,7 @@
 
       <div style="margin-bottom:14px;">
         <label for="{{ form.profile_image.id_for_label }}" class="muted">프로필 이미지</label>
-        <div style="display:flex; align-items:center; gap:14px; margin:8px 0;">
+        <div style="display:flex; align-items:center; gap:14px; margin:8px 0; flex-wrap:wrap;">
           {% if request.user.profile_image %}
             <img src="{{ request.user.profile_image.url }}" alt="현재 프로필" class="avatar" id="current-avatar" style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#0c0a18;">
           {% else %}
@@ -109,7 +235,26 @@
           {% endif %}
           <img src="" alt="미리보기" id="preview-avatar" style="display:none; width:72px; height:72px; border-radius:50%; object-fit:cover; border:1px solid var(--border);">
         </div>
-        {{ form.profile_image }}
+        <div class="profile-image-controls">
+          <input type="file" name="{{ form.profile_image.html_name }}" id="{{ form.profile_image.id_for_label }}" accept="image/*" class="profile-file-input">
+          <label class="profile-upload-chip" for="{{ form.profile_image.id_for_label }}">
+            <span class="chip-dot" aria-hidden="true"></span>
+            <div>
+              <div class="chip-title">새 이미지 업로드</div>
+              <div class="chip-desc">JPG, PNG, 최대 10MB</div>
+            </div>
+          </label>
+          {% if request.user.profile_image %}
+            <label class="profile-clear-tile" for="{{ form.profile_image.id_for_label }}-clear">
+              <input type="checkbox" name="{{ form.profile_image.html_name }}-clear" id="{{ form.profile_image.id_for_label }}-clear" value="on" class="profile-clear-input">
+              <span class="clear-checkbox" aria-hidden="true"><span>&check;</span></span>
+              <div class="profile-clear-copy">
+                <div class="title">프로필 삭제</div>
+                <div class="desc">체크하고 저장하면 현재 프로필 이미지를 삭제합니다.</div>
+              </div>
+            </label>
+          {% endif %}
+        </div>
         {% if form.profile_image.errors %}
           <ul class="errorlist" style="margin:6px 0 0; padding:0; list-style:none; color:#fecaca; font-size:12px;">
             {% for error in form.profile_image.errors %}<li>{{ error }}</li>{% endfor %}
