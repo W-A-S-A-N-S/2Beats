@@ -37,11 +37,9 @@
     position: relative;
   }
 
+  /* 🔥 자동완성 결과를 fixed로 변경하여 body에 직접 붙임 */
   .autocomplete-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
+    position: fixed;
     background: rgba(18,15,31,0.98);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.12);
@@ -403,7 +401,7 @@
         value="{{ query }}"
         autocomplete="off"
       >
-      <div class="autocomplete-results" id="autocomplete-results"></div>
+      <!-- 🔥 자동완성은 body 레벨에 생성됨 (JavaScript로) -->
     </div>
 
     <div class="filter-row">
@@ -507,9 +505,28 @@
 {% block extra_js %}
 <script>
 const searchInput = document.getElementById('search-input');
-const autocompleteResults = document.getElementById('autocomplete-results');
+let autocompleteResults = null;
 let selectedIndex = -1;
 let debounceTimer;
+
+// 🔥 자동완성 결과를 body에 직접 추가
+function createAutocompleteElement() {
+  if (!autocompleteResults) {
+    autocompleteResults = document.createElement('div');
+    autocompleteResults.className = 'autocomplete-results';
+    autocompleteResults.id = 'autocomplete-results';
+    document.body.appendChild(autocompleteResults);
+  }
+  return autocompleteResults;
+}
+
+// 🔥 검색창 위치에 맞춰 자동완성 위치 조정
+function updateAutocompletePosition() {
+  const rect = searchInput.getBoundingClientRect();
+  autocompleteResults.style.top = (rect.bottom + window.scrollY) + 'px';
+  autocompleteResults.style.left = rect.left + 'px';
+  autocompleteResults.style.width = rect.width + 'px';
+}
 
 // 입력 시 자동완성
 searchInput.addEventListener('input', function() {
@@ -517,7 +534,9 @@ searchInput.addEventListener('input', function() {
   const query = this.value.trim();
 
   if (query.length < 1) {
-    autocompleteResults.classList.remove('active');
+    if (autocompleteResults) {
+      autocompleteResults.classList.remove('active');
+    }
     return;
   }
 
@@ -529,7 +548,9 @@ searchInput.addEventListener('input', function() {
         if (data.results.length > 0) {
           renderAutocomplete(data.results);
         } else {
-          autocompleteResults.classList.remove('active');
+          if (autocompleteResults) {
+            autocompleteResults.classList.remove('active');
+          }
         }
       });
   }, 300);
@@ -538,6 +559,8 @@ searchInput.addEventListener('input', function() {
 // 자동완성 렌더링
 function renderAutocomplete(results) {
   selectedIndex = -1;
+  createAutocompleteElement();
+  
   autocompleteResults.innerHTML = results.map((item, index) => `
     <div class="autocomplete-item" data-value="${item.value}" data-index="${index}">
       <span class="autocomplete-type ${item.type === 'title' ? 'type-title' : 'type-singer'}">
@@ -547,6 +570,7 @@ function renderAutocomplete(results) {
     </div>
   `).join('');
 
+  updateAutocompletePosition();
   autocompleteResults.classList.add('active');
 
   // 클릭 이벤트
@@ -577,7 +601,9 @@ searchInput.addEventListener('keydown', function(e) {
     autocompleteResults.classList.remove('active');
     searchInput.closest('form').submit();
   } else if (e.key === 'Escape') {
-    autocompleteResults.classList.remove('active');
+    if (autocompleteResults) {
+      autocompleteResults.classList.remove('active');
+    }
   }
 });
 
@@ -593,8 +619,24 @@ function updateSelected(items) {
 
 // 외부 클릭 시 닫기
 document.addEventListener('click', function(e) {
-  if (!searchInput.contains(e.target) && !autocompleteResults.contains(e.target)) {
-    autocompleteResults.classList.remove('active');
+  if (!searchInput.contains(e.target) && 
+      (!autocompleteResults || !autocompleteResults.contains(e.target))) {
+    if (autocompleteResults) {
+      autocompleteResults.classList.remove('active');
+    }
+  }
+});
+
+// 스크롤/리사이즈 시 위치 업데이트
+window.addEventListener('scroll', function() {
+  if (autocompleteResults && autocompleteResults.classList.contains('active')) {
+    updateAutocompletePosition();
+  }
+});
+
+window.addEventListener('resize', function() {
+  if (autocompleteResults && autocompleteResults.classList.contains('active')) {
+    updateAutocompletePosition();
   }
 });
 
