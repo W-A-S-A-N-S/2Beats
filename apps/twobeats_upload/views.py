@@ -10,6 +10,9 @@ from apps.twobeats_video_explore.models import VideoLike, VideoComment
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.utils import timezone
+from datetime import timedelta
 from PIL import Image
 import tempfile
 import io
@@ -30,13 +33,13 @@ def music_list(request):
     
     # 정렬
     if sort == 'oldest':
-        musics = musics.order_by('music_created_at')  # 오래된순
+        musics = musics.order_by('music_created_at')
     elif sort == 'title':
-        musics = musics.order_by('music_title')  # 제목순
+        musics = musics.order_by('music_title')
     elif sort == 'play':
-        musics = musics.order_by('-music_count')  # 재생순
-    else:  # latest (기본값)
-        musics = musics.order_by('-music_created_at')  # 최신순
+        musics = musics.order_by('-music_count')
+    else:
+        musics = musics.order_by('-music_created_at')
     
     return render(request, 'twobeats_upload/music_list.html', {
         'musics': musics,
@@ -111,13 +114,13 @@ def video_list(request):
     
     # 정렬
     if sort == 'oldest':
-        videos = videos.order_by('video_created_at')  # 오래된순
+        videos = videos.order_by('video_created_at')
     elif sort == 'title':
-        videos = videos.order_by('video_title')  # 제목순
+        videos = videos.order_by('video_title')
     elif sort == 'views':
-        videos = videos.order_by('-video_views')  # 조회순
-    else:  # latest (기본값)
-        videos = videos.order_by('-video_created_at')  # 최신순
+        videos = videos.order_by('-video_views')
+    else:
+        videos = videos.order_by('-video_created_at')
     
     return render(request, 'twobeats_upload/video_list.html', {
         'videos': videos,
@@ -177,25 +180,43 @@ def video_delete(request, pk):
     return redirect('twobeats_upload:video_list')
 
 
-# === 음악/영상 업로드 시작 ===
+# ============================================
+# 🔥 음악/영상 업로드 시작 (세션 방식)
+# ============================================
+
 @login_required
 def music_upload_start(request):
+    """1단계: 파일 선택 → 세션에 임시 저장"""
     if request.method == 'POST':
         form = MusicFileForm(request.POST, request.FILES)
         if form.is_valid():
             music_file = form.cleaned_data['music_root']
             base_title = os.path.splitext(music_file.name)[0]
-
-            music = Music(
-                music_title=base_title,
-                music_singer=request.user.username or "Unknown",
-                music_type='etc',
-                music_root=music_file,
+            
+            # 🔥 중복 체크 (1분 이내)
+            one_min_ago = timezone.now() - timedelta(minutes=1)
+            recent_duplicate = Music.objects.filter(
                 uploader=request.user,
-            )
-            music.save()
-
-            return redirect('twobeats_upload:music_update', pk=music.pk)
+                music_title=base_title,
+                music_created_at__gte=one_min_ago
+            ).exists()
+            
+            if recent_duplicate:
+                return redirect('twobeats_upload:music_list')
+            
+            # 🔥 세션에 임시 저장 (user.pk 사용!)
+            user_id = request.user.pk if request.user.is_authenticated else 'anonymous'
+            temp_filename = f'temp/{user_id}/{timezone.now().timestamp()}_{music_file.name}'
+            temp_path = default_storage.save(temp_filename, ContentFile(music_file.read()))
+            
+            request.session['temp_music'] = {
+                'title': base_title,
+                'file_path': temp_path,
+                'file_name': music_file.name,
+                'file_size': music_file.size
+            }
+            
+            return redirect('twobeats_upload:music_update_new')
     else:
         form = MusicFileForm()
 
@@ -205,95 +226,188 @@ def music_upload_start(request):
 
 
 @login_required
+def music_update_new(request):
+    """2단계: 정보 입력 → 최종 DB 저장"""
+    temp_data = request.session.get('temp_music')
+    
+    if not temp_data:
+        return redirect('twobeats_upload:music_upload_start')
+    
+    if request.method == 'POST':
+        form = MusicForm(request.POST, request.FILES)
+        if form.is_valid():
+            # 🔥 여기서 최종 DB 저장!
+            music = form.save(commit=False)
+            music.uploader = request.user
+            music.music_root.name = temp_data['file_path']
+            music.save()
+            form.save_m2m()
+            
+            # 🔥 세션 정리
+            del request.session['temp_music']
+            
+            return redirect('twobeats_upload:music_detail', pk=music.pk)
+    else:
+        form = MusicForm(initial={
+            'music_title': temp_data['title'],
+            'music_singer': request.user.username,
+            'music_type': 'etc'
+        })
+    
+    return render(request, 'twobeats_upload/music_form.html', {
+        'form': form,
+        'temp_file_name': temp_data['file_name']
+    })
+
+
+@login_required
+def cleanup_temp_music(request):
+    """음악 업로드 취소 시 세션 정리"""
+    if request.method == 'POST':
+        temp_data = request.session.get('temp_music')
+        if temp_data:
+            try:
+                default_storage.delete(temp_data['file_path'])
+            except:
+                pass
+            del request.session['temp_music']
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
 def video_upload_start(request):
+    """1단계: 파일 선택 → 세션에 임시 저장"""
     if request.method == 'POST':
         form = VideoFileForm(request.POST, request.FILES)
         if form.is_valid():
             video_file = form.cleaned_data['video_root']
             base_title = os.path.splitext(video_file.name)[0]
-
-            video = Video(
-                video_title=base_title,
-                video_singer=request.user.username or "Unknown",
-                video_type='etc',
-                video_root=video_file,
+            
+            one_min_ago = timezone.now() - timedelta(minutes=1)
+            recent_duplicate = Video.objects.filter(
                 video_user=request.user,
-            )
-            video.save()
-
+                video_title=base_title,
+                video_created_at__gte=one_min_ago
+            ).exists()
+            
+            if recent_duplicate:
+                return redirect('twobeats_upload:video_list')
+            
+            # 🔥 user.pk 사용!
+            user_id = request.user.pk if request.user.is_authenticated else 'anonymous'
+            temp_filename = f'temp/{user_id}/{timezone.now().timestamp()}_{video_file.name}'
+            temp_path = default_storage.save(temp_filename, ContentFile(video_file.read()))
+            
             # 🔥 썸네일 자동 생성
+            thumbnail_path = None
             try:
                 import cv2
                 import numpy as np
                 
-                # 임시 파일로 비디오 저장
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_video:
-                    for chunk in video_file.chunks():
-                        tmp_video.write(chunk)
+                    with default_storage.open(temp_path, 'rb') as f:
+                        tmp_video.write(f.read())
                     tmp_video_path = tmp_video.name
                 
-
-
-                # OpenCV로 비디오 열기
                 cap = cv2.VideoCapture(tmp_video_path)
-                
-                # FPS와 총 프레임 수 가져오기
                 fps = cap.get(cv2.CAP_PROP_FPS)
                 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
                 
-                # 1초 시점의 프레임 번호 계산 (또는 중간 프레임)
                 target_frame = min(int(fps), total_frames // 2) if total_frames > 0 else 0
                 cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
                 
-                # 프레임 읽기
                 ret, frame = cap.read()
                 cap.release()
                 
-                if not ret:
-                    raise Exception("프레임을 읽을 수 없습니다")
+                if ret:
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(frame_rgb)
+                    img.thumbnail((320, 320), Image.Resampling.LANCZOS)
+                    
+                    thumb_io = io.BytesIO()
+                    img.save(thumb_io, format='JPEG', quality=85)
+                    thumb_io.seek(0)
+                    
+                    thumb_filename = f'temp/{user_id}/{timezone.now().timestamp()}_thumb.jpg'
+                    thumbnail_path = default_storage.save(thumb_filename, ContentFile(thumb_io.read()))
                 
-
-                
-                # BGR을 RGB로 변환 (OpenCV는 BGR 사용)
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                
-                # PIL Image로 변환
-                img = Image.fromarray(frame_rgb)
-                
-                # 리사이즈 (가로 320px 유지, 비율 유지)
-                img.thumbnail((320, 320), Image.Resampling.LANCZOS)
-
-                
-                # 메모리에 저장
-                thumb_io = io.BytesIO()
-                img.save(thumb_io, format='JPEG', quality=85)
-                thumb_io.seek(0)
-                
-                # Video 모델에 저장
-                video.video_thumbnail.save(
-                    f"{base_title}_thumb.jpg",
-                    ContentFile(thumb_io.read()),
-                    save=True
-                )
-
-                
-                # 정리
                 os.unlink(tmp_video_path)
-
-
+            
             except Exception as e:
                 import traceback
-                print(traceback.format_exc())
-                # 썸네일 생성 실패해도 비디오는 저장됨
-
-            return redirect('twobeats_upload:video_update', pk=video.pk)
+                print(f"썸네일 생성 실패: {traceback.format_exc()}")
+            
+            request.session['temp_video'] = {
+                'title': base_title,
+                'file_path': temp_path,
+                'file_name': video_file.name,
+                'file_size': video_file.size,
+                'thumbnail_path': thumbnail_path
+            }
+            
+            return redirect('twobeats_upload:video_update_new')
     else:
         form = VideoFileForm()
 
     return render(request, 'twobeats_upload/video_upload_start.html', {
         'form': form,
     })
+
+
+@login_required
+def video_update_new(request):
+    """2단계: 정보 입력 → 최종 DB 저장"""
+    temp_data = request.session.get('temp_video')
+    
+    if not temp_data:
+        return redirect('twobeats_upload:video_upload_start')
+    
+    if request.method == 'POST':
+        form = VideoForm(request.POST, request.FILES)
+        if form.is_valid():
+            video = form.save(commit=False)
+            video.video_user = request.user
+            video.video_root.name = temp_data['file_path']
+            
+            # 썸네일이 세션에 있으면 적용
+            if temp_data.get('thumbnail_path') and not request.FILES.get('video_thumbnail'):
+                video.video_thumbnail.name = temp_data['thumbnail_path']
+            
+            video.save()
+            form.save_m2m()
+            
+            del request.session['temp_video']
+            
+            return redirect('twobeats_upload:video_detail', pk=video.pk)
+    else:
+        form = VideoForm(initial={
+            'video_title': temp_data['title'],
+            'video_singer': request.user.username,
+            'video_type': 'etc'
+        })
+    
+    return render(request, 'twobeats_upload/video_form.html', {
+        'form': form,
+        'temp_file_name': temp_data['file_name']
+    })
+
+
+@login_required
+def cleanup_temp_video(request):
+    """영상 업로드 취소 시 세션 정리"""
+    if request.method == 'POST':
+        temp_data = request.session.get('temp_video')
+        if temp_data:
+            try:
+                default_storage.delete(temp_data['file_path'])
+                if temp_data.get('thumbnail_path'):
+                    default_storage.delete(temp_data['thumbnail_path'])
+            except:
+                pass
+            del request.session['temp_video']
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=400)
 
 
 # === 재생/좋아요/댓글 API ===

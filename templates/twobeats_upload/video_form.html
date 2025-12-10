@@ -2,8 +2,6 @@
 
 {% block content %}
 <div class="tb-upload-page">
-
-  <!-- 상단 헤더 -->
   <div class="tb-upload-header">
     <h1 class="tb-page-title">Video Info</h1>
     <p class="tb-page-subtitle">영상 정보를 입력하고 썸네일을 추가해주세요</p>
@@ -18,15 +16,11 @@
       </div>
     {% endif %}
 
-    <!-- 🔥 왼쪽/오른쪽 2컬럼 레이아웃 -->
     <div class="tb-upload-layout">
-
-      <!-- 왼쪽: 썸네일 -->
       <section class="tb-upload-left">
         <div class="tb-artwork-card"
           tabindex="-1"
           onclick="document.getElementById('id_video_thumbnail').click()">
-
           <img
             id="tb-artwork-preview"
             class="tb-artwork-preview"
@@ -34,7 +28,6 @@
             src="{% if video and video.video_thumbnail %}{{ video.video_thumbnail.url }}{% endif %}"
             {% if not video or not video.video_thumbnail %}style="display:none;"{% endif %}
           >
-
           <div id="tb-artwork-placeholder"
               class="tb-artwork-placeholder"
               {% if video and video.video_thumbnail %}style="display:none;"{% endif %}>
@@ -50,9 +43,7 @@
             <span class="tb-artwork-hint">클릭하여 이미지 선택</span>
           </div>
         </div>
-
         {{ form.video_thumbnail }}
-
         {% if form.video_thumbnail.errors %}
           <div class="tb-field-error">
             {{ form.video_thumbnail.errors }}
@@ -60,11 +51,7 @@
         {% endif %}
       </section>
 
-
-      <!-- 오른쪽: 입력 필드 전체 -->
       <section class="tb-upload-right">
-
-        <!-- Title -->
         <div class="tb-field-row">
           <label class="tb-label" for="id_video_title">
             <span class="tb-label-text">Title</span>
@@ -80,7 +67,6 @@
           </div>
         </div>
 
-        <!-- Artist -->
         <div class="tb-field-row">
           <label class="tb-label" for="id_video_singer">
             <span class="tb-label-text">Artist</span>
@@ -99,7 +85,6 @@
           </div>
         </div>
 
-        <!-- Type -->
         <div class="tb-field-row">
           <label class="tb-label" for="id_video_type">
             <span class="tb-label-text">Type</span>
@@ -115,13 +100,11 @@
           </div>
         </div>
 
-        <!-- Tags -->
         <div class="tb-field-row">
           <label class="tb-label">
             <span class="tb-label-text">Tags</span>
           </label>
           <div class="tb-field-main">
-            
             <div class="tb-tags-grid">
               {% for tag in form.tags.field.queryset %}
                 <label class="tb-tag-checkbox" for="tag_{{ tag.id }}">
@@ -140,42 +123,19 @@
                 </div>
               {% endfor %}
             </div>
-            
             {% if form.tags.errors %}
               <div class="tb-field-error">
                 {{ form.tags.errors }}
               </div>
             {% endif %}
-            
             <p class="tb-help-text">
-              영상 분위기, 장르 등에 맞는 태그를 선택해 주세요 (여러 개 선택 가능)
+              분위기, 템포, 사용처 등에 맞는 태그를 선택해 주세요 (여러 개 선택 가능)
             </p>
           </div>
         </div>
-
-        <!-- Description -->
-        <div class="tb-field-row">
-          <label class="tb-label" for="id_video_detail">
-            <span class="tb-label-text">Description</span>
-          </label>
-          <div class="tb-field-main">
-            {{ form.video_detail }}
-            {% if form.video_detail.errors %}
-              <div class="tb-field-error">
-                {{ form.video_detail.errors }}
-              </div>
-            {% endif %}
-            <p class="tb-help-text">
-              영상에 대한 설명을 입력하세요
-            </p>
-          </div>
-        </div>
-
       </section>
+    </div>
 
-    </div>  <!-- /.tb-upload-layout -->
-
-    <!-- 🔥 하단 버튼 -->
     <div class="tb-upload-footer">
       <a href="{% url 'twobeats_upload:video_list' %}" class="tb-btn-cancel" id="cancel-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -183,19 +143,80 @@
         </svg>
         <span>취소</span>
       </a>
-      <button type="submit" class="tb-btn-submit">
+      <button type="submit" class="tb-btn-submit" id="submit-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        <span>저장 후 완료</span>
+        <span id="submit-text">저장 후 완료</span>
       </button>
     </div>
   </form>
-  
 </div>
 
 <script>
 (function () {
+  let isSubmitting = false;
+  const videoForm = document.getElementById('video-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const submitText = document.getElementById('submit-text');
+
+  // 🔥 폼 제출 이벤트
+  if (videoForm && submitBtn) {
+    videoForm.addEventListener('submit', function(e) {
+      if (isSubmitting) {
+        e.preventDefault();
+        return false;
+      }
+      isSubmitting = true;
+      submitBtn.disabled = true;
+      submitText.textContent = '저장 중...';
+    });
+  }
+
+  // 🔥 뒤로가기 감지 → 세션 정리
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+      isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitText.textContent = '저장 후 완료';
+      }
+      
+      // 🔥 세션 정리 요청
+      fetch("{% url 'twobeats_upload:cleanup_temp_video' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      }).catch(err => console.error('Cleanup failed:', err));
+    }
+  });
+
+  // 🔥 취소 버튼
+  const cancelBtn = document.getElementById('cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function(e) {
+      if (isSubmitting) {
+        e.preventDefault();
+        alert('저장이 진행 중입니다. 잠시만 기다려주세요.');
+        return;
+      }
+      
+      e.preventDefault();
+      fetch("{% url 'twobeats_upload:cleanup_temp_video' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      }).then(() => {
+        window.location.href = "{% url 'twobeats_upload:video_list' %}";
+      }).catch(err => {
+        console.error('Cleanup failed:', err);
+        window.location.href = "{% url 'twobeats_upload:video_list' %}";
+      });
+    });
+  }
+
   // 썸네일 미리보기
   const input = document.getElementById('id_video_thumbnail');
   const img = document.getElementById('tb-artwork-preview');
@@ -205,49 +226,16 @@
     input.addEventListener('change', function () {
       if (this.files && this.files[0]) {
         const file = this.files[0];
-        
-        // 파일 크기 체크 (10MB)
         if (file.size > 10 * 1024 * 1024) {
           alert('이미지 파일은 10MB를 초과할 수 없습니다.');
           this.value = '';
           return;
         }
-        
         const url = URL.createObjectURL(file);
         img.src = url;
         img.style.display = 'block';
-
         if (placeholder) {
           placeholder.style.display = 'none';
-        }
-      }
-    });
-  }
-
-  // 취소 버튼 확인
-  const cancelBtn = document.getElementById('cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', function(e) {
-      const form = document.getElementById('video-form');
-      let hasChanges = false;
-      
-      // 폼 변경 감지
-      const inputs = form.querySelectorAll('input[type="text"], textarea, select');
-      inputs.forEach(input => {
-        if (input.value && input.value.trim() !== '') {
-          hasChanges = true;
-        }
-      });
-      
-      const fileInput = document.getElementById('id_video_thumbnail');
-      if (fileInput && fileInput.files.length > 0) {
-        hasChanges = true;
-      }
-      
-      // 변경사항 있으면 확인
-      if (hasChanges) {
-        if (!confirm('작성 중인 내용이 있습니다. 정말 취소하시겠습니까?')) {
-          e.preventDefault();
         }
       }
     });
@@ -256,423 +244,45 @@
 </script>
 
 <style>
-/* ========================================
-   전체 레이아웃
-   ======================================== */
-.tb-upload-page {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.tb-upload-header {
-  margin-bottom: 2.5rem;
-  text-align: center;
-}
-
-.tb-page-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #c084fc, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.tb-page-subtitle {
-  color: #94a3b8;
-  font-size: 1rem;
-  margin: 0;
-}
-
-/* ========================================
-   2컬럼 레이아웃
-   ======================================== */
-.tb-upload-layout {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 3rem;
-  margin-bottom: 2rem;
-}
-
-@media (max-width: 1024px) {
-  .tb-upload-layout {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-}
-
-/* ========================================
-   왼쪽: 썸네일
-   ======================================== */
-.tb-upload-left {
-  position: sticky;
-  top: 2rem;
-  height: fit-content;
-}
-
-.tb-artwork-card {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 1rem;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.tb-artwork-card:hover {
-  border-color: rgba(192, 132, 252, 0.5);
-  background: rgba(192, 132, 252, 0.05);
-  transform: translateY(-2px);
-}
-
-.tb-artwork-card:focus {
-  outline: 2px solid #c084fc;
-  outline-offset: 2px;
-}
-
-.tb-artwork-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.tb-artwork-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.tb-artwork-icon {
-  color: #64748b;
-  transition: all 0.3s;
-}
-
-.tb-artwork-card:hover .tb-artwork-icon {
-  color: #c084fc;
-  transform: scale(1.1);
-}
-
-.tb-artwork-text {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #cbd5e1;
-}
-
-.tb-artwork-hint {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-/* 파일 input 숨기기 */
-#id_music_thumbnail,
-#id_video_thumbnail {
-  display: none;
-}
-
-/* ========================================
-   오른쪽: 입력 필드
-   ======================================== */
-.tb-upload-right {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.tb-field-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tb-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-.tb-label-text {
-  color: #e2e8f0;
-}
-
-.tb-required {
-  color: #f87171;
-  font-size: 1.25rem;
-}
-
-.tb-field-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Input 스타일 */
-.tb-field-main input[type="text"],
-.tb-field-main textarea,
-.tb-field-main select {
-  width: 100%;
-  padding: 0.875rem 1.125rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  color: #ffffff;
-  font-size: 0.9375rem;
-  transition: all 0.2s;
-}
-
-.tb-field-main input[type="text"]:focus,
-.tb-field-main textarea:focus,
-.tb-field-main select:focus {
-  outline: none;
-  border-color: #c084fc;
-  background: rgba(192, 132, 252, 0.1);
-  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1);
-}
-
-/* Select 옵션 스타일 */
-.tb-field-main select option {
-  background: #1a1f2e;
-  color: #cbd5e1;
-  padding: 0.75rem;
-}
-
-.tb-field-main select option:hover {
-  background: rgba(192, 132, 252, 0.2);
-  color: #c084fc;
-}
-
-.tb-field-main select option:checked {
-  background: #7c3aed;
-  color: #ffffff;
-}
-
-.tb-field-main textarea {
-  resize: vertical;
-  min-height: 120px;
-  font-family: inherit;
-}
-
-.tb-field-main select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  padding-right: 2.5rem;
-}
-
-.tb-help-text {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0;
-}
-
-.tb-field-error {
-  font-size: 0.875rem;
-  color: #f87171;
-  margin: 0;
-}
-
-/* ========================================
-   Tags Grid
-   ======================================== */
-.tb-tags-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin: 0.75rem 0;
-}
-
-.tb-tag-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-  user-select: none;
-}
-
-.tb-tag-checkbox:hover {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(192,132,252,0.4);
-  transform: translateY(-1px);
-}
-
-.tb-tag-checkbox input[type="checkbox"] {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-radius: 4px;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  transition: all 0.2s;
-  margin: 0;
-}
-
-.tb-tag-checkbox input[type="checkbox"]:checked {
-  background: linear-gradient(135deg, #c084fc, #7c3aed);
-  border-color: #c084fc;
-}
-
-.tb-tag-checkbox input[type="checkbox"]:checked::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.tb-tag-checkbox:has(input:checked) {
-  background: rgba(192,132,252,0.15);
-  border-color: #c084fc;
-}
-
-.tb-tag-checkbox:has(input:checked) .tb-tag-label {
-  color: #c084fc;
-  font-weight: 600;
-}
-
-@media (max-width: 768px) {
-  .tb-tags-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
-}
-
-/* ========================================
-   🔥 하단 버튼
-   ======================================== */
-.tb-upload-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 1rem;
-  padding: 2rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 취소 버튼 */
-.tb-btn-cancel {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.75rem;
-  color: #cbd5e1;
-  font-size: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tb-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.tb-btn-cancel svg {
-  flex-shrink: 0;
-}
-
-/* 저장 버튼 */
-.tb-btn-submit {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, #c084fc, #7c3aed);
-  border: none;
-  border-radius: 0.75rem;
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(192, 132, 252, 0.3);
-}
-
-.tb-btn-submit:hover {
-  background: linear-gradient(135deg, #a855f7, #6d28d9);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(192, 132, 252, 0.4);
-}
-
-.tb-btn-submit:active {
-  transform: translateY(0);
-}
-
-.tb-btn-submit svg {
-  flex-shrink: 0;
-}
-
-@media (max-width: 640px) {
-  .tb-upload-footer {
-    flex-direction: column-reverse;
-  }
-  
-  .tb-btn-cancel,
-  .tb-btn-submit {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* ========================================
-   경고 메시지
-   ======================================== */
-.tb-alert-warning {
-  padding: 1rem 1.25rem;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 0.75rem;
-  color: #fbbf24;
-  font-size: 0.9375rem;
-}
-
-.tb-alert-warning code {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
-}
-
-.tb-form-errors {
-  padding: 1rem 1.25rem;
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  border-radius: 0.75rem;
-  color: #f87171;
-  margin-bottom: 2rem;
-}
+.tb-upload-page { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.tb-upload-header { margin-bottom: 2.5rem; text-align: center; }
+.tb-page-title { font-size: 2.5rem; font-weight: 700; color: #ffffff; margin: 0 0 0.5rem 0; background: linear-gradient(135deg, #c084fc, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.tb-page-subtitle { color: #94a3b8; font-size: 1rem; margin: 0; }
+.tb-upload-layout { display: grid; grid-template-columns: 380px 1fr; gap: 3rem; margin-bottom: 2rem; }
+@media (max-width: 1024px) { .tb-upload-layout { grid-template-columns: 1fr; gap: 2rem; } }
+.tb-upload-left { position: sticky; top: 2rem; height: fit-content; }
+.tb-artwork-card { position: relative; width: 100%; aspect-ratio: 1; background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.15); border-radius: 1rem; overflow: hidden; cursor: pointer; transition: all 0.3s; }
+.tb-artwork-card:hover { border-color: rgba(192, 132, 252, 0.5); background: rgba(192, 132, 252, 0.05); transform: translateY(-2px); }
+.tb-artwork-preview { width: 100%; height: 100%; object-fit: cover; }
+.tb-artwork-placeholder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+.tb-artwork-icon { color: #64748b; transition: all 0.3s; }
+.tb-artwork-card:hover .tb-artwork-icon { color: #c084fc; transform: scale(1.1); }
+.tb-artwork-text { font-size: 1.125rem; font-weight: 600; color: #cbd5e1; }
+.tb-artwork-hint { font-size: 0.875rem; color: #64748b; }
+#id_music_thumbnail, #id_video_thumbnail { display: none; }
+.tb-upload-right { display: flex; flex-direction: column; gap: 2rem; }
+.tb-field-row { display: flex; flex-direction: column; gap: 0.75rem; }
+.tb-label { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: #e2e8f0; }
+.tb-required { color: #f87171; font-size: 1.25rem; }
+.tb-field-main { display: flex; flex-direction: column; gap: 0.5rem; }
+.tb-field-main input[type="text"], .tb-field-main textarea, .tb-field-main select { width: 100%; padding: 0.875rem 1.125rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.75rem; color: #ffffff; font-size: 0.9375rem; transition: all 0.2s; }
+.tb-field-main input[type="text"]:focus, .tb-field-main textarea:focus, .tb-field-main select:focus { outline: none; border-color: #c084fc; background: rgba(192, 132, 252, 0.1); box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1); }
+.tb-field-main select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+.tb-help-text { font-size: 0.875rem; color: #64748b; margin: 0; }
+.tb-field-error { font-size: 0.875rem; color: #f87171; margin: 0; }
+.tb-tags-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin: 0.75rem 0; }
+.tb-tag-checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; font-size: 0.875rem; user-select: none; }
+.tb-tag-checkbox:hover { background: rgba(255,255,255,0.06); border-color: rgba(192,132,252,0.4); transform: translateY(-1px); }
+.tb-tag-checkbox input[type="checkbox"] { appearance: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer; position: relative; flex-shrink: 0; transition: all 0.2s; margin: 0; }
+.tb-tag-checkbox input[type="checkbox"]:checked { background: linear-gradient(135deg, #c084fc, #7c3aed); border-color: #c084fc; }
+.tb-tag-checkbox input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 12px; font-weight: bold; }
+.tb-tag-checkbox:has(input:checked) { background: rgba(192,132,252,0.15); border-color: #c084fc; }
+.tb-tag-checkbox:has(input:checked) .tb-tag-label { color: #c084fc; font-weight: 600; }
+.tb-upload-footer { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; padding: 2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.tb-btn-cancel { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.75rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.75rem; color: #cbd5e1; font-size: 1rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.2s; }
+.tb-btn-cancel:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); color: #ffffff; transform: translateY(-1px); }
+.tb-btn-submit { display: inline-flex; align-items: center; gap: 0.625rem; padding: 0.875rem 2rem; background: linear-gradient(135deg, #c084fc, #7c3aed); border: none; border-radius: 0.75rem; color: #ffffff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(192, 132, 252, 0.3); }
+.tb-btn-submit:hover:not(:disabled) { background: linear-gradient(135deg, #a855f7, #6d28d9); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(192, 132, 252, 0.4); }
+.tb-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 {% endblock %}
