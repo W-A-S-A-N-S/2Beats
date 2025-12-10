@@ -45,7 +45,7 @@
         {% if video.video_thumbnail %}
           <img src="{{ video.video_thumbnail.url }}" alt="{{ video.video_title }}">
         {% else %}
-          <img src="{% static 'images/default-video-thumbnail.png' %}" alt="{{ video.video_title }}">  
+          <img src="{% static 'default-video-thumbnail.png' %}" alt="{{ video.video_title }}">  
         {% endif %}
         
         <!-- 플레이 오버레이 -->
