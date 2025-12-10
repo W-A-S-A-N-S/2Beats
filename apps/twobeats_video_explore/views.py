@@ -462,45 +462,62 @@ def delete_comment(request, comment_id):
     })
 
 
+# @api_view(['GET'])
+# def stream_video(request, video_id):
+#     """
+#     영상 파일을 스트리밍합니다.
+
+#     Range Request를 지원하여 seek(탐색) 기능이 정상 작동합니다.
+#     """
+#     # 1. Video 객체 가져오기
+#     video = get_object_or_404(Video, pk=video_id)
+
+#     # 2. 파일이 실제로 존재하는지 확인
+#     if not video.video_root:
+#         return Response(
+#             {"error": "이 영상에는 비디오 파일이 없습니다."},
+#             status=404
+#         )
+
+#     # 3. 파일 확장자에 따라 MIME type 자동 감지
+#     content_type, _ = mimetypes.guess_type(video.video_root.path)
+#     if not content_type:
+#         content_type = 'video/mp4'  # 기본값
+
+#     # 4. Range Request를 지원하는 응답 생성
+#     # RangedFileResponse가 자동으로:
+#     # - Range 헤더 확인
+#     # - 206 Partial Content 응답
+#     # - Content-Range 헤더 설정
+
+#     # FileField.open() 사용 - Django가 자동으로 파일 관리 (close() 포함)
+#     video.video_root.open('rb')
+
+#     response = RangedFileResponse(
+#         request,
+#         video.video_root,  # FileField 객체 전달 (close() 메서드 있음)
+#         content_type=content_type
+#     )
+
+#     return response
+
 @api_view(['GET'])
 def stream_video(request, video_id):
     """
-    영상 파일을 스트리밍합니다.
-
-    Range Request를 지원하여 seek(탐색) 기능이 정상 작동합니다.
+    S3 영상 파일을 스트리밍합니다.
     """
-    # 1. Video 객체 가져오기
+    """Video 객체 가져오기"""
     video = get_object_or_404(Video, pk=video_id)
 
-    # 2. 파일이 실제로 존재하는지 확인
+    """파일 존재 확인"""
     if not video.video_root:
         return Response(
             {"error": "이 영상에는 비디오 파일이 없습니다."},
             status=404
         )
 
-    # 3. 파일 확장자에 따라 MIME type 자동 감지
-    content_type, _ = mimetypes.guess_type(video.video_root.path)
-    if not content_type:
-        content_type = 'video/mp4'  # 기본값
-
-    # 4. Range Request를 지원하는 응답 생성
-    # RangedFileResponse가 자동으로:
-    # - Range 헤더 확인
-    # - 206 Partial Content 응답
-    # - Content-Range 헤더 설정
-
-    # FileField.open() 사용 - Django가 자동으로 파일 관리 (close() 포함)
-    video.video_root.open('rb')
-
-    response = RangedFileResponse(
-        request,
-        video.video_root,  # FileField 객체 전달 (close() 메서드 있음)
-        content_type=content_type
-    )
-
-    return response
-
+    """S3 URL로 바로 리다이렉트"""
+    return redirect(video.video_root.url)
 
 @login_required
 def download_video(request, video_id):
