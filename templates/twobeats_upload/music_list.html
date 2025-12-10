@@ -48,15 +48,6 @@
         {% else %}
           <img src="{% static 'default-music-thumbnail.png' %}" alt="{{ music.music_title }}">
         {% endif %}
-        
-        <!-- 플레이 오버레이 -->
-        <div class="play-overlay">
-          <button class="play-btn" data-music-id="{{ music.pk }}">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-          </button>
-        </div>
 
         <!-- 상태 배지 -->
         <div class="status-badge">공개</div>
@@ -118,12 +109,6 @@
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
         </a>
-        <button class="action-btn delete-btn" data-music-id="{{ music.pk }}" title="삭제">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>
       </div>
     </div>
     {% empty %}
@@ -150,27 +135,6 @@
   </div>
 
 </div>
-
-<script>
-// 삭제 버튼
-document.querySelectorAll('.delete-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    if (confirm('정말 삭제하시겠습니까?')) {
-      const musicId = this.dataset.musicId;
-      console.log('Delete:', musicId);
-    }
-  });
-});
-
-// 플레이 버튼
-document.querySelectorAll('.play-btn').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    e.preventDefault();
-    const musicId = this.dataset.musicId;
-    console.log('Play:', musicId);
-  });
-});
-</script>
 
 <style>
 /* ========================================
@@ -331,44 +295,6 @@ document.querySelectorAll('.play-btn').forEach(btn => {
   transform: scale(1.05);
 }
 
-/* 플레이 오버레이 */
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.music-card:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-btn {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #c084fc, #7c3aed);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(192, 132, 252, 0.4);
-}
-
-.play-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(192, 132, 252, 0.6);
-}
-
 /* 상태 배지 */
 .status-badge {
   position: absolute;
@@ -476,11 +402,6 @@ document.querySelectorAll('.play-btn').forEach(btn => {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(192, 132, 252, 0.4);
   color: #c084fc;
-}
-
-.delete-btn:hover {
-  border-color: rgba(248, 113, 113, 0.4);
-  color: #f87171;
 }
 
 /* ========================================
