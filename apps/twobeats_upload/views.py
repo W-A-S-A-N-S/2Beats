@@ -11,11 +11,13 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.files import File
 from django.utils import timezone
 from datetime import timedelta
 from PIL import Image
 import tempfile
 import io
+import traceback
 
 # === Music CRUD ===
 
@@ -49,13 +51,9 @@ def music_list(request):
 @login_required
 def music_detail(request, pk):
     music = get_object_or_404(Music, pk=pk)
-
     if request.user != music.uploader:
         return redirect('twobeats_upload:music_list')
-
-    return render(request, 'twobeats_upload/music_detail.html', {
-        'music': music,
-    })
+    return render(request, 'twobeats_upload/music_detail.html', {'music': music})
 
 
 @login_required
@@ -70,9 +68,7 @@ def music_create(request):
             return redirect('twobeats_upload:music_detail', pk=music.pk)
     else:
         form = MusicForm()
-    return render(request, 'twobeats_upload/music_form.html', {
-        'form': form,
-    })
+    return render(request, 'twobeats_upload/music_form.html', {'form': form})
 
 
 @login_required
@@ -85,10 +81,7 @@ def music_update(request, pk):
             return redirect('twobeats_upload:music_detail', pk=music.pk)
     else:
         form = MusicForm(instance=music)
-    return render(request, 'twobeats_upload/music_form.html', {
-        'form': form,
-        'music': music,
-    })
+    return render(request, 'twobeats_upload/music_form.html', {'form': form, 'music': music})
 
 
 @login_required
@@ -99,6 +92,7 @@ def music_delete(request, pk):
 
 
 # === Video CRUD ===
+
 @login_required
 def video_list(request):
     """내 영상 목록"""
@@ -120,22 +114,15 @@ def video_list(request):
     else:
         videos = videos.order_by('-video_created_at')
     
-    return render(request, 'twobeats_upload/video_list.html', {
-        'videos': videos,
-        'current_sort': sort
-    })
+    return render(request, 'twobeats_upload/video_list.html', {'videos': videos, 'current_sort': sort})
 
 
 @login_required
 def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
-
     if request.user != video.video_user:
         return redirect('twobeats_upload:video_list')
-
-    return render(request, 'twobeats_upload/video_detail.html', {
-        'video': video,
-    })
+    return render(request, 'twobeats_upload/video_detail.html', {'video': video})
 
 
 @login_required
@@ -150,9 +137,7 @@ def video_create(request):
             return redirect('twobeats_upload:video_detail', pk=video.pk)
     else:
         form = VideoForm()
-    return render(request, 'twobeats_upload/video_form.html', {
-        'form': form,
-    })
+    return render(request, 'twobeats_upload/video_form.html', {'form': form})
 
 
 @login_required
@@ -165,10 +150,7 @@ def video_update(request, pk):
             return redirect('twobeats_upload:video_detail', pk=video.pk)
     else:
         form = VideoForm(instance=video)
-    return render(request, 'twobeats_upload/video_form.html', {
-        'form': form,
-        'video': video,
-    })
+    return render(request, 'twobeats_upload/video_form.html', {'form': form, 'video': video})
 
 
 @login_required
@@ -178,46 +160,85 @@ def video_delete(request, pk):
     return redirect('twobeats_upload:video_list')
 
 
-# ============================================
-# 🔥 Helper: temp 파일을 정식 경로로 이동
-# ============================================
+# === Helper Functions ===
 
 def move_temp_to_permanent(temp_path, permanent_prefix):
-    """temp 파일을 정식 경로로 이동하고 temp 삭제"""
+    """temp 파일을 정식 경로로 이동"""
+    if not temp_path.startswith('temp/'):
+        return temp_path
+    
     try:
-        # 새 경로 생성
         file_name = os.path.basename(temp_path)
-        # 타임스탬프 제거 (1234567890.123_filename.mp3 → filename.mp3)
         clean_name = '_'.join(file_name.split('_')[1:]) if '_' in file_name else file_name
         new_path = f'{permanent_prefix}/{clean_name}'
         
-        # 파일 복사
         with default_storage.open(temp_path, 'rb') as source:
             permanent_path = default_storage.save(new_path, source)
         
-        # temp 파일 삭제
-        default_storage.delete(temp_path)
+        try:
+            default_storage.delete(temp_path)
+        except:
+            pass
         
         return permanent_path
     except Exception as e:
-        print(f"❌ 파일 이동 실패: {temp_path} → {e}")
-        return temp_path  # 실패 시 원본 경로 반환
+        print(f"❌ 파일 이동 실패: {e}")
+        return temp_path
 
 
-# ============================================
-# 🔥 음악/영상 업로드 시작 (세션 방식)
-# ============================================
+def generate_video_thumbnail(video_path, user_id):
+    """비디오 썸네일 생성"""
+    try:
+        import cv2
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_video:
+            with default_storage.open(video_path, 'rb') as f:
+                tmp_video.write(f.read())
+            tmp_video_path = tmp_video.name
+        
+        cap = cv2.VideoCapture(tmp_video_path)
+        
+        if not cap.isOpened():
+            os.unlink(tmp_video_path)
+            return None
+        
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        target_frame = min(int(fps), total_frames // 2) if total_frames > 0 else 0
+        
+        cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+        ret, frame = cap.read()
+        cap.release()
+        os.unlink(tmp_video_path)
+        
+        if not ret:
+            return None
+        
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(frame_rgb)
+        img.thumbnail((320, 320), Image.Resampling.LANCZOS)
+        
+        thumb_io = io.BytesIO()
+        img.save(thumb_io, format='JPEG', quality=85)
+        thumb_io.seek(0)
+        
+        thumb_filename = f'thumbnails/video/{user_id}_{timezone.now().timestamp()}.jpg'
+        return default_storage.save(thumb_filename, ContentFile(thumb_io.read()))
+    except:
+        return None
+
+
+# === Music Upload ===
 
 @login_required
 def music_upload_start(request):
-    """1단계: 파일 선택 → 세션에 임시 저장"""
+    """1단계: 파일 선택"""
     if request.method == 'POST':
         form = MusicFileForm(request.POST, request.FILES)
         if form.is_valid():
             music_file = form.cleaned_data['music_root']
             base_title = os.path.splitext(music_file.name)[0]
             
-            # 중복 체크
             one_min_ago = timezone.now() - timedelta(minutes=1)
             recent_duplicate = Music.objects.filter(
                 uploader=request.user,
@@ -228,8 +249,7 @@ def music_upload_start(request):
             if recent_duplicate:
                 return redirect('twobeats_upload:music_list')
             
-            # 세션에 임시 저장
-            user_id = request.user.pk if request.user.is_authenticated else 'anonymous'
+            user_id = request.user.pk
             temp_filename = f'temp/{user_id}/{timezone.now().timestamp()}_{music_file.name}'
             temp_path = default_storage.save(temp_filename, ContentFile(music_file.read()))
             
@@ -243,15 +263,13 @@ def music_upload_start(request):
             return redirect('twobeats_upload:music_update_new')
     else:
         form = MusicFileForm()
-
-    return render(request, 'twobeats_upload/music_upload_start.html', {
-        'form': form,
-    })
+    
+    return render(request, 'twobeats_upload/music_upload_start.html', {'form': form})
 
 
 @login_required
 def music_update_new(request):
-    """2단계: 정보 입력 → 최종 DB 저장"""
+    """2단계: 정보 입력"""
     temp_data = request.session.get('temp_music')
     
     if not temp_data:
@@ -259,11 +277,14 @@ def music_update_new(request):
     
     if request.method == 'POST':
         form = MusicForm(request.POST, request.FILES)
+        
+        if 'music_root' in form.fields:
+            form.fields['music_root'].required = False
+        
         if form.is_valid():
             music = form.save(commit=False)
             music.uploader = request.user
             
-            # 🔥 temp → 정식 경로로 이동
             temp_path = temp_data['file_path']
             permanent_path = move_temp_to_permanent(temp_path, 'music')
             music.music_root.name = permanent_path
@@ -271,16 +292,23 @@ def music_update_new(request):
             music.save()
             form.save_m2m()
             
-            # 세션 정리
             del request.session['temp_music']
             
             return redirect('twobeats_upload:music_detail', pk=music.pk)
+        
+        return render(request, 'twobeats_upload/music_form.html', {
+            'form': form,
+            'temp_file_name': temp_data['file_name']
+        })
     else:
         form = MusicForm(initial={
             'music_title': temp_data['title'],
             'music_singer': request.user.username,
             'music_type': 'etc'
         })
+        
+        if 'music_root' in form.fields:
+            form.fields['music_root'].required = False
     
     return render(request, 'twobeats_upload/music_form.html', {
         'form': form,
@@ -290,7 +318,7 @@ def music_update_new(request):
 
 @login_required
 def cleanup_temp_music(request):
-    """음악 업로드 취소 시 세션 정리"""
+    """음악 세션 정리"""
     if request.method == 'POST':
         temp_data = request.session.get('temp_music')
         if temp_data:
@@ -303,9 +331,11 @@ def cleanup_temp_music(request):
     return JsonResponse({'status': 'error'}, status=400)
 
 
+# === Video Upload ===
+
 @login_required
 def video_upload_start(request):
-    """1단계: 파일 선택 → 세션에 임시 저장"""
+    """1단계: 파일 선택"""
     if request.method == 'POST':
         form = VideoFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -322,69 +352,27 @@ def video_upload_start(request):
             if recent_duplicate:
                 return redirect('twobeats_upload:video_list')
             
-            user_id = request.user.pk if request.user.is_authenticated else 'anonymous'
+            user_id = request.user.pk
             temp_filename = f'temp/{user_id}/{timezone.now().timestamp()}_{video_file.name}'
             temp_path = default_storage.save(temp_filename, ContentFile(video_file.read()))
-            
-            # 썸네일 자동 생성
-            thumbnail_path = None
-            try:
-                import cv2
-                import numpy as np
-                
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_video:
-                    with default_storage.open(temp_path, 'rb') as f:
-                        tmp_video.write(f.read())
-                    tmp_video_path = tmp_video.name
-                
-                cap = cv2.VideoCapture(tmp_video_path)
-                fps = cap.get(cv2.CAP_PROP_FPS)
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                
-                target_frame = min(int(fps), total_frames // 2) if total_frames > 0 else 0
-                cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-                
-                ret, frame = cap.read()
-                cap.release()
-                
-                if ret:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    img = Image.fromarray(frame_rgb)
-                    img.thumbnail((320, 320), Image.Resampling.LANCZOS)
-                    
-                    thumb_io = io.BytesIO()
-                    img.save(thumb_io, format='JPEG', quality=85)
-                    thumb_io.seek(0)
-                    
-                    thumb_filename = f'temp/{user_id}/{timezone.now().timestamp()}_thumb.jpg'
-                    thumbnail_path = default_storage.save(thumb_filename, ContentFile(thumb_io.read()))
-                
-                os.unlink(tmp_video_path)
-            
-            except Exception as e:
-                import traceback
-                print(f"썸네일 생성 실패: {traceback.format_exc()}")
             
             request.session['temp_video'] = {
                 'title': base_title,
                 'file_path': temp_path,
                 'file_name': video_file.name,
-                'file_size': video_file.size,
-                'thumbnail_path': thumbnail_path
+                'file_size': video_file.size
             }
             
             return redirect('twobeats_upload:video_update_new')
     else:
         form = VideoFileForm()
-
-    return render(request, 'twobeats_upload/video_upload_start.html', {
-        'form': form,
-    })
+    
+    return render(request, 'twobeats_upload/video_upload_start.html', {'form': form})
 
 
 @login_required
 def video_update_new(request):
-    """2단계: 정보 입력 → 최종 DB 저장"""
+    """2단계: 정보 입력"""
     temp_data = request.session.get('temp_video')
     
     if not temp_data:
@@ -392,20 +380,22 @@ def video_update_new(request):
     
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
+        
+        if 'video_root' in form.fields:
+            form.fields['video_root'].required = False
+        
         if form.is_valid():
             video = form.save(commit=False)
             video.video_user = request.user
             
-            # 🔥 temp → 정식 경로로 이동 (비디오)
             temp_path = temp_data['file_path']
             permanent_path = move_temp_to_permanent(temp_path, 'videos')
             video.video_root.name = permanent_path
             
-            # 🔥 temp → 정식 경로로 이동 (썸네일)
-            if temp_data.get('thumbnail_path') and not request.FILES.get('video_thumbnail'):
-                thumb_temp = temp_data['thumbnail_path']
-                thumb_permanent = move_temp_to_permanent(thumb_temp, 'thumbnails/video')
-                video.video_thumbnail.name = thumb_permanent
+            if not request.FILES.get('video_thumbnail'):
+                thumbnail = generate_video_thumbnail(permanent_path, request.user.pk)
+                if thumbnail:
+                    video.video_thumbnail.name = thumbnail
             
             video.save()
             form.save_m2m()
@@ -413,12 +403,20 @@ def video_update_new(request):
             del request.session['temp_video']
             
             return redirect('twobeats_upload:video_detail', pk=video.pk)
+        
+        return render(request, 'twobeats_upload/video_form.html', {
+            'form': form,
+            'temp_file_name': temp_data['file_name']
+        })
     else:
         form = VideoForm(initial={
             'video_title': temp_data['title'],
             'video_singer': request.user.username,
             'video_type': 'etc'
         })
+        
+        if 'video_root' in form.fields:
+            form.fields['video_root'].required = False
     
     return render(request, 'twobeats_upload/video_form.html', {
         'form': form,
@@ -428,14 +426,12 @@ def video_update_new(request):
 
 @login_required
 def cleanup_temp_video(request):
-    """영상 업로드 취소 시 세션 정리"""
+    """영상 세션 정리"""
     if request.method == 'POST':
         temp_data = request.session.get('temp_video')
         if temp_data:
             try:
                 default_storage.delete(temp_data['file_path'])
-                if temp_data.get('thumbnail_path'):
-                    default_storage.delete(temp_data['thumbnail_path'])
             except:
                 pass
             del request.session['temp_video']
@@ -443,35 +439,25 @@ def cleanup_temp_video(request):
     return JsonResponse({'status': 'error'}, status=400)
 
 
-# === 재생/좋아요/댓글 API ===
+# === APIs ===
 
 @require_POST
 def music_play(request, music_id):
-    """음악 재생 시 재생수 증가"""
     try:
         music = Music.objects.get(id=music_id)
         music.music_count += 1
         music.save(update_fields=['music_count'])
-        
-        return JsonResponse({
-            'success': True,
-            'play_count': music.music_count
-        })
+        return JsonResponse({'success': True, 'play_count': music.music_count})
     except Music.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '음악을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '음악을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def music_like(request, music_id):
-    """음악 좋아요 토글"""
     try:
         music = Music.objects.get(id=music_id)
         user = request.user
-        
         like_exists = MusicLike.objects.filter(user=user, music=music).exists()
         
         if like_exists:
@@ -484,38 +470,22 @@ def music_like(request, music_id):
             is_liked = True
         
         music.save(update_fields=['music_like_count'])
-        
-        return JsonResponse({
-            'success': True,
-            'is_liked': is_liked,
-            'like_count': music.music_like_count
-        })
+        return JsonResponse({'success': True, 'is_liked': is_liked, 'like_count': music.music_like_count})
     except Music.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '음악을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '음악을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def music_comment_create(request, music_id):
-    """음악 댓글 작성"""
     try:
         music = Music.objects.get(id=music_id)
         content = request.POST.get('content', '').strip()
         
         if not content:
-            return JsonResponse({
-                'success': False,
-                'error': '댓글 내용을 입력해주세요.'
-            }, status=400)
+            return JsonResponse({'success': False, 'error': '댓글 내용을 입력해주세요.'}, status=400)
         
-        comment = MusicComment.objects.create(
-            user=request.user,
-            music=music,
-            content=content
-        )
+        comment = MusicComment.objects.create(user=request.user, music=music, content=content)
         
         return JsonResponse({
             'success': True,
@@ -530,72 +500,44 @@ def music_comment_create(request, music_id):
             'comment_count': music.comments.count()
         })
     except Music.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '음악을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '음악을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def music_comment_delete(request, comment_id):
-    """음악 댓글 삭제"""
     try:
         comment = MusicComment.objects.get(id=comment_id)
         
         if comment.user != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': '본인의 댓글만 삭제할 수 있습니다.'
-            }, status=403)
+            return JsonResponse({'success': False, 'error': '본인의 댓글만 삭제할 수 있습니다.'}, status=403)
         
         music_id = comment.music.id
         comment.delete()
-        
         music = Music.objects.get(id=music_id)
         
-        return JsonResponse({
-            'success': True,
-            'comment_count': music.comments.count()
-        })
+        return JsonResponse({'success': True, 'comment_count': music.comments.count()})
     except MusicComment.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '댓글을 찾을 수 없습니다.'
-        }, status=404)
-    
+        return JsonResponse({'success': False, 'error': '댓글을 찾을 수 없습니다.'}, status=404)
 
-# ========================================
-# 🔥 Video API
-# ========================================
 
 @require_POST
 def video_play(request, video_id):
-    """영상 재생 시 조회수 증가"""
     try:
         video = Video.objects.get(id=video_id)
         video.video_views += 1
         video.save(update_fields=['video_views'])
-        
-        return JsonResponse({
-            'success': True,
-            'view_count': video.video_views
-        })
+        return JsonResponse({'success': True, 'view_count': video.video_views})
     except Video.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '영상을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '영상을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def video_like(request, video_id):
-    """영상 좋아요 토글"""
     try:
         video = Video.objects.get(id=video_id)
         user = request.user
-        
         like_exists = VideoLike.objects.filter(user=user, video=video).exists()
         
         if like_exists:
@@ -608,38 +550,22 @@ def video_like(request, video_id):
             is_liked = True
         
         video.save(update_fields=['video_like_count'])
-        
-        return JsonResponse({
-            'success': True,
-            'is_liked': is_liked,
-            'like_count': video.video_like_count
-        })
+        return JsonResponse({'success': True, 'is_liked': is_liked, 'like_count': video.video_like_count})
     except Video.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '영상을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '영상을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def video_comment_create(request, video_id):
-    """영상 댓글 작성"""
     try:
         video = Video.objects.get(id=video_id)
         content = request.POST.get('content', '').strip()
         
         if not content:
-            return JsonResponse({
-                'success': False,
-                'error': '댓글 내용을 입력해주세요.'
-            }, status=400)
+            return JsonResponse({'success': False, 'error': '댓글 내용을 입력해주세요.'}, status=400)
         
-        comment = VideoComment.objects.create(
-            user=request.user,
-            video=video,
-            content=content
-        )
+        comment = VideoComment.objects.create(user=request.user, video=video, content=content)
         
         return JsonResponse({
             'success': True,
@@ -654,36 +580,22 @@ def video_comment_create(request, video_id):
             'comment_count': video.comments.count()
         })
     except Video.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '영상을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '영상을 찾을 수 없습니다.'}, status=404)
 
 
 @require_POST
 @login_required
 def video_comment_delete(request, comment_id):
-    """영상 댓글 삭제"""
     try:
         comment = VideoComment.objects.get(id=comment_id)
         
         if comment.user != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': '본인의 댓글만 삭제할 수 있습니다.'
-            }, status=403)
+            return JsonResponse({'success': False, 'error': '본인의 댓글만 삭제할 수 있습니다.'}, status=403)
         
         video_id = comment.video.id
         comment.delete()
-        
         video = Video.objects.get(id=video_id)
         
-        return JsonResponse({
-            'success': True,
-            'comment_count': video.comments.count()
-        })
+        return JsonResponse({'success': True, 'comment_count': video.comments.count()})
     except VideoComment.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': '댓글을 찾을 수 없습니다.'
-        }, status=404)
+        return JsonResponse({'success': False, 'error': '댓글을 찾을 수 없습니다.'}, status=404)
