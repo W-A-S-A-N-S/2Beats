@@ -19,7 +19,7 @@
   .home-header {
     text-align: center;
     padding: 2rem 0 3rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);  /* 미세한 구분선 */
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     margin-bottom: 3rem;
   }
 
@@ -28,7 +28,6 @@
     margin: 0 0 0.5rem;
     font-size: 2.5rem;
     font-weight: 700;
-    /* 흰색에서 보라색으로 그라데이션 */
     background: linear-gradient(135deg, #ffffff 0%, #c084fc 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -45,7 +44,6 @@
      액션 카드 그리드 - 주요 기능 카드들
      ======================================== */
   .action-cards {
-    /* 반응형 그리드 - 최소 300px 카드가 자동 배치 */
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
@@ -62,7 +60,11 @@
     padding: 2rem;
     transition: all 0.3s;
     position: relative;
-    overflow: hidden;  /* ::before 요소가 카드 밖으로 나가지 않도록 */
+    overflow: hidden;
+    
+    /* 👇 버튼 위치 맞추기 위한 Flexbox */
+    display: flex;
+    flex-direction: column;
   }
 
   /* 카드 상단 그라데이션 바 - 호버 시 나타남 */
@@ -72,17 +74,17 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;  /* 얇은 상단 바 */
-    background: linear-gradient(90deg, #c084fc, #7c3aed);  /* 보라색 그라데이션 */
-    opacity: 0;  /* 기본적으로 숨김 */
+    height: 4px;
+    background: linear-gradient(90deg, #c084fc, #7c3aed);
+    opacity: 0;
     transition: opacity 0.3s;
   }
 
   /* 호버 시 카드 효과 */
   .action-card:hover {
-    background: rgba(255,255,255,0.08);  /* 배경 밝아짐 */
-    border-color: rgba(192,132,252,0.3);  /* 보라색 테두리 */
-    transform: translateY(-4px);  /* 살짝 위로 올라감 */
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(192,132,252,0.3);
+    transform: translateY(-4px);
   }
 
   /* 호버 시 상단 바 표시 */
@@ -98,8 +100,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;  /* 둥근 모서리 */
-    background: rgba(192,132,252,0.15);  /* 보라색 반투명 배경 */
+    border-radius: 12px;
+    background: rgba(192,132,252,0.15);
   }
 
   .action-card h2 {
@@ -113,13 +115,19 @@
     color: rgba(255,255,255,0.6);
     font-size: 0.9rem;
     line-height: 1.6;
+    
+    /* 👇 남은 공간 모두 차지 */
+    flex: 1;
   }
 
   /* 카드 내부 버튼들 컨테이너 */
   .action-card-buttons {
     display: flex;
     gap: 0.75rem;
-    flex-wrap: wrap;  /* 버튼이 많으면 줄바꿈 */
+    flex-wrap: wrap;
+    
+    /* 👇 항상 하단에 위치 */
+    margin-top: auto;
   }
 
   /* ========================================
@@ -162,7 +170,7 @@
   /* 빠른 링크 호버 효과 */
   .quick-link-item:hover {
     background: rgba(255,255,255,0.08);
-    border-color: rgba(192,132,252,0.3);  /* 보라색 테두리 */
+    border-color: rgba(192,132,252,0.3);
     color: white;
   }
 
@@ -175,7 +183,7 @@
     justify-content: center;
     border-radius: 8px;
     background: rgba(192,132,252,0.15);
-    flex-shrink: 0;  /* 아이콘 크기 고정 */
+    flex-shrink: 0;
   }
 
   /* ========================================
@@ -183,11 +191,7 @@
      ======================================== */
   @media (max-width: 768px) {
     .home-header h1 { font-size: 2rem; }
-
-    /* 모바일에서는 액션 카드 1열로 배치 */
     .action-cards { grid-template-columns: 1fr; }
-
-    /* 빠른 링크도 1열로 */
     .quick-links-grid { grid-template-columns: 1fr; }
   }
 </style>

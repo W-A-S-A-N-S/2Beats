@@ -101,6 +101,23 @@
         </div>
 
         <div class="tb-field-row">
+          <label class="tb-label" for="id_video_detail">
+            <span class="tb-label-text">Description</span>
+          </label>
+          <div class="tb-field-main">
+            {{ form.video_detail }}
+            {% if form.video_detail.errors %}
+              <div class="tb-field-error">
+                {{ form.video_detail.errors }}
+              </div>
+            {% endif %}
+            <p class="tb-help-text">
+              영상에 대한 설명을 작성해주세요 (선택사항)
+            </p>
+          </div>
+        </div>
+        
+        <div class="tb-field-row">
           <label class="tb-label">
             <span class="tb-label-text">Tags</span>
           </label>
@@ -284,5 +301,12 @@
 .tb-btn-submit { display: inline-flex; align-items: center; gap: 0.625rem; padding: 0.875rem 2rem; background: linear-gradient(135deg, #c084fc, #7c3aed); border: none; border-radius: 0.75rem; color: #ffffff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(192, 132, 252, 0.3); }
 .tb-btn-submit:hover:not(:disabled) { background: linear-gradient(135deg, #a855f7, #6d28d9); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(192, 132, 252, 0.4); }
 .tb-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.tb-field-main select option {
+  background: #1e1b4b;
+  color: #ffffff;
+}
+.tb-field-main select option:checked {
+  background: #2563eb;
+}
 </style>
 {% endblock %}
