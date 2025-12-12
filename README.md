@@ -5,6 +5,7 @@
 **🔗 Links**
 - **사이트**: [2beats.kro.kr](http://2beats.kro.kr)
 - **문서**: [Notion 프로젝트 문서](https://likelion.notion.site/2-2aa44860a4f48081b5b7e93e32b07836?source=copy_link)
+- **동영상** : [2beats 영상](https://youtu.be/BEMBQu82QSs)
 
 ## 목차
 
